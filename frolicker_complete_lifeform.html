@@ -1,0 +1,709 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#app{width:100%;padding:0.5rem 0}
+#tabs{display:flex;gap:6px;padding:0 0 0.75rem;flex-wrap:wrap}
+button.tab{font-size:12px;padding:5px 12px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary)}
+button.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
+canvas{display:block;width:100%;border-radius:8px}
+#desc{font-size:12px;color:var(--color-text-secondary);padding:0.5rem 0 0.25rem;min-height:2.2em;line-height:1.6}
+#legend2{display:flex;flex-wrap:wrap;gap:10px;padding:0.35rem 0}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+.sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+</style>
+<div id="app">
+<div id="tabs">
+  <button class="tab active" onclick="setView(0)">Spore core</button>
+  <button class="tab" onclick="setView(1)">Mature frolicker</button>
+  <button class="tab" onclick="setView(2)">Colonial sponge</button>
+  <button class="tab" onclick="setView(3)">Propulsion & tail</button>
+  <button class="tab" onclick="setView(4)">Expulsion cloud</button>
+</div>
+<canvas id="c"></canvas>
+<div id="desc"></div>
+<div id="legend2"></div>
+</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const desc=document.getElementById('desc'),leg=document.getElementById('legend2');
+let view=0,t=0,raf;
+
+const TEAL='#1D9E75',TEAL2='#5DCAA5',PURPLE='#7F77DD',PURPLE2='#AFA9EC',
+      AMBER='#EF9F27',CORAL='#D85A30',BLUE='#378ADD',BLUE2='#85B7EB',
+      GRAY='#888780',LGRAY='#D3D1C7',GOLD='#BA7517',GREEN='#639922';
+
+const VIEWS=[
+  {label:'Spore core — single dormant unit with nanotube backbone',
+   legend:[['#5DCAA5','Fe–S junction'],['#7F77DD','lipid maze'],['#BA7517','nanotube'],['#378ADD','H-bond site'],['#EF9F27','electron pulse'],['#D85A30','heat bloom'],['#888780','melanin shield']]},
+  {label:'Mature frolicker — fully activated, calcium shell grown, bilateral sensing array',
+   legend:[['#1D9E75','calcium shell'],['#BA7517','nanotube spine'],['#7F77DD','lipid mantle'],['#378ADD','gradient fin'],['#D85A30','heat core'],['#EF9F27','electron field'],['#5DCAA5','sensor ring']]},
+  {label:'Colonial sponge — mesh of frolickers sharing thermal gradients and electron highways',
+   legend:[['#7F77DD','individual unit'],['#BA7517','nanotube bridge'],['#D85A30','shared heat node'],['#1D9E75','gradient canal'],['#378ADD','H-cloud attractor']]},
+  {label:'Propulsion — gradient tail builds from stored energy, expels directional ion wake',
+   legend:[['#EF9F27','energy buildup'],['#D85A30','thermal exhaust'],['#378ADD','ion wake'],['#7F77DD','body core'],['#1D9E75','calcium keel']]},
+  {label:'Expulsion cloud — energy packet released, hovers, then rejoins body',
+   legend:[['#378ADD','expelled packet'],['#EF9F27','reabsorption arc'],['#D85A30','heat trace'],['#7F77DD','body after release'],['#1D9E75','cloud membrane']]}
+];
+
+function W(){return cv.width}function H(){return cv.height}
+function cx(){return W()/2}function cy(){return H()/2}
+
+function resize(){
+  const w=cv.parentElement.clientWidth||600;
+  cv.width=w; cv.height=Math.round(w*0.58);
+  desc.textContent=VIEWS[view].label;
+  buildLegend();
+}
+
+function buildLegend(){
+  leg.innerHTML='';
+  VIEWS[view].legend.forEach(([c,l])=>{
+    leg.innerHTML+=`<div class="li"><div class="sq" style="background:${c}"></div>${l}</div>`;
+  });
+}
+
+function setView(v){
+  view=v;
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===v));
+  desc.textContent=VIEWS[v].label;
+  buildLegend();
+}
+
+function lerp(a,b,f){return a+(b-a)*f}
+function pulse(freq,phase){return(Math.sin(t*freq+phase)+1)/2}
+
+// ── VIEW 0: SPORE CORE WITH NANOTUBES ──
+function drawSpore(){
+  const cX=cx(),cY=cy(),R=Math.min(W(),H())*0.3;
+  ctx.clearRect(0,0,W(),H());
+
+  // Void background dots
+  for(let i=0;i<40;i++){
+    const sx=((i*137.5)%W()),sy=((i*91.3+33)%H());
+    ctx.beginPath();ctx.arc(sx,sy,0.8,0,Math.PI*2);
+    ctx.fillStyle=LGRAY;ctx.globalAlpha=0.2;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Melanin shield segments
+  const segs=36;
+  for(let i=0;i<segs;i++){
+    const a0=(i/segs)*Math.PI*2,a1=((i+1)/segs)*Math.PI*2;
+    const p=pulse(1.2,i*0.3);
+    ctx.beginPath();
+    ctx.moveTo(cX,cY);
+    ctx.arc(cX,cY,R*(1+p*0.03),a0,a1);
+    ctx.closePath();
+    ctx.fillStyle=i%2===0?'#2C2C2A':'#444441';
+    ctx.globalAlpha=0.55+p*0.1;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Shield ring
+  ctx.beginPath();ctx.arc(cX,cY,R,0,Math.PI*2);
+  ctx.strokeStyle=GRAY;ctx.lineWidth=2;ctx.globalAlpha=0.7;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // PAH filter ring
+  ctx.beginPath();ctx.arc(cX,cY,R*0.92,0,Math.PI*2);
+  ctx.strokeStyle=TEAL2;ctx.lineWidth=0.8;ctx.globalAlpha=0.4;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // NANOTUBES — 3 crossing the core
+  const tubes=[0,Math.PI/3,Math.PI*2/3];
+  tubes.forEach((angle,ti)=>{
+    const len=R*0.8;
+    const x1=cX+Math.cos(angle)*len*0.5,y1=cY+Math.sin(angle)*len*0.5;
+    const x2=cX-Math.cos(angle)*len*0.5,y2=cY-Math.sin(angle)*len*0.5;
+    // tube body
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=GOLD;ctx.lineWidth=3;ctx.globalAlpha=0.9;ctx.stroke();
+    // electron flowing along tube
+    const ef=(t*0.6+ti*0.7)%1;
+    const ex=lerp(x1,x2,ef),ey=lerp(y1,y2,ef);
+    ctx.beginPath();ctx.arc(ex,ey,4,0,Math.PI*2);
+    ctx.fillStyle=AMBER;ctx.globalAlpha=0.95;ctx.fill();
+    // tube caps
+    [0,1].forEach(end=>{
+      const tx=end===0?x1:x2,ty=end===0?y1:y2;
+      ctx.beginPath();ctx.arc(tx,ty,5,0,Math.PI*2);
+      ctx.fillStyle=GOLD;ctx.globalAlpha=0.8;ctx.fill();
+    });
+  });
+  ctx.globalAlpha=1;
+
+  // Lipid maze arms
+  for(let a=0;a<8;a++){
+    const ba=(a/8)*Math.PI*2+t*0.15;
+    ctx.beginPath();
+    let px=cX,py=cY;
+    for(let k=0;k<5;k++){
+      const fr=(k+1)/5,kink=ba+(k%2?0.45:-0.45);
+      const kr=fr*R*0.72;
+      const nx=cX+Math.cos(kink)*kr,ny=cY+Math.sin(kink)*kr*0.7;
+      k===0?ctx.moveTo(px,py):ctx.lineTo(nx,ny);
+      px=nx;py=ny;
+    }
+    ctx.strokeStyle=PURPLE;ctx.lineWidth=1.4;ctx.globalAlpha=0.45;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // Fe-S nodes
+  for(let n=0;n<10;n++){
+    const a=(n/10)*Math.PI*2+t*0.4;
+    const r=R*0.52;
+    const nx=cX+Math.cos(a)*r,ny=cY+Math.sin(a)*r*0.7;
+    const p=pulse(2,n*0.8);
+    ctx.beginPath();ctx.arc(nx,ny,4+p*3,0,Math.PI*2);
+    ctx.fillStyle=TEAL2;ctx.globalAlpha=0.8;ctx.fill();
+    // electron arcs
+    if(p>0.6){
+      const ex=cX+Math.cos(a)*r*(0.5+p*0.3),ey=cY+Math.sin(a)*r*(0.5+p*0.3)*0.7;
+      ctx.beginPath();ctx.arc(ex,ey,2.5,0,Math.PI*2);
+      ctx.fillStyle=AMBER;ctx.globalAlpha=p;ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Heat bloom center
+  const hp=pulse(0.8,0)*0.6;
+  ctx.beginPath();ctx.arc(cX,cY,R*0.18+hp*15,0,Math.PI*2);
+  ctx.fillStyle=CORAL;ctx.globalAlpha=0.12+hp*0.1;ctx.fill();
+
+  // H-bond sites outer ring
+  for(let s=0;s<8;s++){
+    const a=(s/8)*Math.PI*2+t*0.05;
+    const r=R*0.88;
+    const sx=cX+Math.cos(a)*r,sy=cY+Math.sin(a)*r*0.7;
+    const captured=pulse(0.5,s*0.9)>0.55;
+    ctx.beginPath();ctx.arc(sx,sy,captured?5:3,0,Math.PI*2);
+    ctx.fillStyle=captured?BLUE:LGRAY;ctx.globalAlpha=captured?0.9:0.4;ctx.fill();
+    if(captured){
+      ctx.beginPath();ctx.arc(sx,sy,10,0,Math.PI*2);
+      ctx.strokeStyle=BLUE;ctx.lineWidth=0.8;ctx.globalAlpha=0.25;ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Incoming H atoms
+  for(let i=0;i<5;i++){
+    const a=(i/5)*Math.PI*2+t*0.1+i*0.7;
+    const dist=R*(1.25-(t*0.25+i*0.4)%0.5);
+    const hx=cX+Math.cos(a)*dist,hy=cY+Math.sin(a)*dist*0.7;
+    if(dist>R*0.88){
+      ctx.beginPath();ctx.arc(hx,hy,2,0,Math.PI*2);
+      ctx.fillStyle=BLUE2;ctx.globalAlpha=0.6;ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Temp label
+  const temp=(2.7+pulse(0.4,0)*2.1).toFixed(1);
+  ctx.font='11px sans-serif';ctx.fillStyle=CORAL;ctx.globalAlpha=0.8;
+  ctx.fillText('interior '+temp+' K',cX-28,cY+R*0.35);
+  ctx.globalAlpha=1;
+}
+
+// ── VIEW 1: MATURE FROLICKER ──
+function drawMature(){
+  ctx.clearRect(0,0,W(),H());
+  const cX=cx(),cY=cy()*0.95;
+  const bodyW=W()*0.22,bodyH=H()*0.38;
+
+  // Starfield
+  for(let i=0;i<50;i++){
+    ctx.beginPath();ctx.arc((i*173)%W(),(i*97+20)%H(),0.7,0,Math.PI*2);
+    ctx.fillStyle=LGRAY;ctx.globalAlpha=0.15;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Calcium shell — layered ellipses
+  for(let layer=4;layer>=0;layer--){
+    const lf=layer/4;
+    ctx.beginPath();
+    ctx.ellipse(cX,cY,bodyW*(1+lf*0.12),bodyH*(1+lf*0.08),0,0,Math.PI*2);
+    ctx.fillStyle=layer===0?'#085041':layer===1?'#0F6E56':'#1D9E75';
+    ctx.globalAlpha=0.08+lf*0.06;ctx.fill();
+    ctx.strokeStyle=TEAL;ctx.lineWidth=0.6;ctx.globalAlpha=0.15+lf*0.08;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // Nanotube spine
+  ctx.beginPath();
+  ctx.moveTo(cX,cY-bodyH*0.75);ctx.lineTo(cX,cY+bodyH*0.75);
+  ctx.strokeStyle=GOLD;ctx.lineWidth=4;ctx.globalAlpha=0.9;ctx.stroke();
+  // flowing electrons along spine
+  for(let e=0;e<4;e++){
+    const ef=((t*0.5+e*0.25)%1);
+    const ey=cY-bodyH*0.75+ef*bodyH*1.5;
+    ctx.beginPath();ctx.arc(cX,ey,3.5,0,Math.PI*2);
+    ctx.fillStyle=AMBER;ctx.globalAlpha=0.9;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Cross nanotubes
+  [-0.4,-0.1,0.25,0.55].forEach((yf,i)=>{
+    const y=cY+yf*bodyH*1.5-bodyH*0.75;
+    const xspan=bodyW*(0.7-Math.abs(yf-0.1)*0.5);
+    ctx.beginPath();ctx.moveTo(cX-xspan,y);ctx.lineTo(cX+xspan,y);
+    ctx.strokeStyle=GOLD;ctx.lineWidth=2;ctx.globalAlpha=0.65;ctx.stroke();
+    const ef2=((t*0.4+i*0.3)%1);
+    const ex2=cX-xspan+ef2*xspan*2;
+    ctx.beginPath();ctx.arc(ex2,y,2.5,0,Math.PI*2);
+    ctx.fillStyle=AMBER;ctx.globalAlpha=0.85;ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Lipid mantle
+  for(let a=0;a<12;a++){
+    const ba=(a/12)*Math.PI*2;
+    const r1=bodyW*0.6,r2=bodyW*1.05;
+    ctx.beginPath();
+    ctx.moveTo(cX+Math.cos(ba)*r1,cY+Math.sin(ba)*r2*0.45);
+    const mid=ba+0.3+Math.sin(t+a)*0.15;
+    ctx.quadraticCurveTo(
+      cX+Math.cos(mid)*(r1+r2)*0.6,cY+Math.sin(mid)*(r1+r2)*0.3,
+      cX+Math.cos(ba+0.6)*r2*0.85,cY+Math.sin(ba+0.6)*r2*0.55
+    );
+    ctx.strokeStyle=PURPLE;ctx.lineWidth=1.2;ctx.globalAlpha=0.35;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // Gradient sensing fins — bilateral
+  [-1,1].forEach(side=>{
+    ctx.beginPath();
+    ctx.moveTo(cX+side*bodyW*0.9,cY-bodyH*0.3);
+    ctx.bezierCurveTo(
+      cX+side*(bodyW*1.5+Math.sin(t*0.8)*8),cY-bodyH*0.5,
+      cX+side*(bodyW*1.5+Math.sin(t*0.8)*8),cY+bodyH*0.2,
+      cX+side*bodyW*0.9,cY+bodyH*0.35
+    );
+    ctx.strokeStyle=BLUE;ctx.lineWidth=1.5;ctx.globalAlpha=0.6;ctx.stroke();
+    ctx.fillStyle=BLUE2;ctx.globalAlpha=0.12;ctx.fill();
+
+    // Tungsten dipoles on fins
+    for(let d=0;d<4;d++){
+      const df=d/3;
+      const fx=cX+side*(bodyW*1.2+Math.sin(t*0.8)*6);
+      const fy=cY-bodyH*0.28+df*bodyH*0.6;
+      const dp=pulse(1.5,d*0.7);
+      ctx.beginPath();ctx.arc(fx,fy,3+dp*2,0,Math.PI*2);
+      ctx.fillStyle=TEAL2;ctx.globalAlpha=0.8;ctx.fill();
+    }
+  });
+  ctx.globalAlpha=1;
+
+  // Fe-S sensor ring
+  for(let s=0;s<14;s++){
+    const a=(s/14)*Math.PI*2+t*0.3;
+    const sr=bodyW*0.82;
+    const sx=cX+Math.cos(a)*sr,sy=cY+Math.sin(a)*sr*0.62;
+    const p=pulse(2,s*0.6);
+    ctx.beginPath();ctx.arc(sx,sy,3+p*2,0,Math.PI*2);
+    ctx.fillStyle=TEAL;ctx.globalAlpha=0.75;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Heat core
+  const hp=pulse(0.6,0);
+  ctx.beginPath();ctx.arc(cX,cY,bodyW*0.35+hp*10,0,Math.PI*2);
+  ctx.fillStyle=CORAL;ctx.globalAlpha=0.18+hp*0.08;ctx.fill();
+
+  // Calcium mineral deposits on shell
+  for(let d=0;d<18;d++){
+    const da=(d/18)*Math.PI*2;
+    const dr=bodyW*(0.95+Math.sin(da*3)*0.06);
+    const dx=cX+Math.cos(da)*dr,dy=cY+Math.sin(da)*dr*0.72;
+    ctx.beginPath();ctx.arc(dx,dy,2.5,0,Math.PI*2);
+    ctx.fillStyle='#9FE1CB';ctx.globalAlpha=0.6;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Labels
+  ctx.font='11px sans-serif';
+  ctx.fillStyle=GOLD;ctx.globalAlpha=0.85;
+  ctx.fillText('nanotube spine',cX+bodyW+10,cY-10);
+  ctx.fillStyle=BLUE;
+  ctx.fillText('gradient fin',cX+bodyW*1.3,cY-bodyH*0.55);
+  ctx.fillStyle=TEAL;
+  ctx.fillText('calcium shell',cX-bodyW-72,cY-bodyH*0.4);
+  ctx.fillStyle=CORAL;
+  ctx.fillText('heat core',cX-bodyW-52,cY+10);
+  ctx.globalAlpha=1;
+}
+
+// ── VIEW 2: COLONIAL SPONGE ──
+function drawColony(){
+  ctx.clearRect(0,0,W(),H());
+  const margin=50;
+  const cols=5,rows=3;
+  const cw=(W()-margin*2)/cols,ch=(H()-margin*2)/rows;
+
+  // Starfield
+  for(let i=0;i<60;i++){
+    ctx.beginPath();ctx.arc((i*167)%W(),(i*113)%H(),0.7,0,Math.PI*2);
+    ctx.fillStyle=LGRAY;ctx.globalAlpha=0.12;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Nanotube bridges between units
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const x=margin+c*cw+cw/2,y=margin+r*ch+ch/2;
+      if(c<cols-1){
+        const x2=margin+(c+1)*cw+cw/2;
+        const active=pulse(1,c*0.4+r*0.7)>0.4;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y);
+        ctx.strokeStyle=GOLD;ctx.lineWidth=active?2:0.8;
+        ctx.globalAlpha=active?0.7:0.25;ctx.stroke();
+        if(active){
+          const ef=(t*0.5+c*0.3)%1;
+          const ex=lerp(x,x2,ef);
+          ctx.beginPath();ctx.arc(ex,y,3,0,Math.PI*2);
+          ctx.fillStyle=AMBER;ctx.globalAlpha=0.9;ctx.fill();
+        }
+      }
+      if(r<rows-1){
+        const y2=margin+(r+1)*ch+ch/2;
+        const active=pulse(0.8,r*0.5+c*0.6)>0.4;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y2);
+        ctx.strokeStyle=GOLD;ctx.lineWidth=active?1.5:0.6;
+        ctx.globalAlpha=active?0.6:0.2;ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Shared heat gradient canals
+  for(let r=0;r<rows-1;r++){
+    const y=margin+r*ch+ch*1.5;
+    ctx.beginPath();
+    ctx.moveTo(margin,y);
+    for(let x=margin;x<=W()-margin;x+=10){
+      const wave=Math.sin(x*0.02+t*0.8)*6;
+      ctx.lineTo(x,y+wave);
+    }
+    ctx.strokeStyle=TEAL;ctx.lineWidth=1.5;ctx.globalAlpha=0.18;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // Individual frolicker units
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const x=margin+c*cw+cw/2,y=margin+r*ch+ch/2;
+      const phase=c*0.4+r*0.7;
+      const energy=pulse(1.1,phase);
+      const unitR=Math.min(cw,ch)*0.32;
+
+      // Body
+      ctx.beginPath();ctx.ellipse(x,y,unitR,unitR*0.78,0,0,Math.PI*2);
+      ctx.fillStyle=PURPLE2;ctx.globalAlpha=0.25+energy*0.15;ctx.fill();
+      ctx.strokeStyle=PURPLE;ctx.lineWidth=1;ctx.globalAlpha=0.5;ctx.stroke();
+
+      // Mini nanotube spine
+      ctx.beginPath();ctx.moveTo(x,y-unitR*0.8);ctx.lineTo(x,y+unitR*0.8);
+      ctx.strokeStyle=GOLD;ctx.lineWidth=2;ctx.globalAlpha=0.8;ctx.stroke();
+
+      // Heat node
+      if(energy>0.55){
+        ctx.beginPath();ctx.arc(x,y,unitR*0.3+energy*8,0,Math.PI*2);
+        ctx.fillStyle=CORAL;ctx.globalAlpha=0.15+energy*0.1;ctx.fill();
+      }
+
+      // Shared heat node at intersections (every 2nd col/row)
+      if(c%2===1&&r%2===0){
+        ctx.beginPath();ctx.arc(x,y,unitR*1.1,0,Math.PI*2);
+        ctx.fillStyle=CORAL;ctx.globalAlpha=0.06;ctx.fill();
+        ctx.strokeStyle=CORAL;ctx.lineWidth=0.8;ctx.globalAlpha=0.2;ctx.stroke();
+      }
+
+      // H-cloud attractor at corners
+      if((c===0||c===cols-1)&&(r===0||r===rows-1)){
+        for(let h=0;h<5;h++){
+          const ha=(h/5)*Math.PI*2+t*0.12;
+          const hr=unitR*1.4+Math.sin(t+h)*5;
+          ctx.beginPath();ctx.arc(x+Math.cos(ha)*hr,y+Math.sin(ha)*hr,2,0,Math.PI*2);
+          ctx.fillStyle=BLUE;ctx.globalAlpha=0.4;ctx.fill();
+        }
+      }
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // Colony boundary
+  ctx.beginPath();
+  ctx.rect(margin-8,margin-8,W()-margin*2+16,H()-margin*2+16);
+  ctx.strokeStyle=TEAL2;ctx.lineWidth=0.8;ctx.globalAlpha=0.2;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  ctx.font='11px sans-serif';
+  ctx.fillStyle=GOLD;ctx.globalAlpha=0.7;
+  ctx.fillText('nanotube electron highways',W()/2-60,margin-20);
+  ctx.fillStyle=CORAL;
+  ctx.fillText('shared heat zone',margin+cw*1.5,margin+ch*0.4);
+  ctx.globalAlpha=1;
+}
+
+// ── VIEW 3: PROPULSION & TAIL ──
+function drawPropulsion(){
+  ctx.clearRect(0,0,W(),H());
+  const cX=W()*0.38,cY=cy();
+
+  // Starfield + motion streaks
+  for(let i=0;i<60;i++){
+    const sx=((i*173+t*30)%W()),sy=((i*97+20)%H());
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+12,sy);
+    ctx.strokeStyle=LGRAY;ctx.lineWidth=0.6;ctx.globalAlpha=0.1;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  const bodyW=W()*0.1,bodyH=H()*0.32;
+
+  // Gradient tail — tapered energy wake behind body
+  const tailLen=W()*0.48;
+  const tailSegs=60;
+  for(let s=0;s<tailSegs;s++){
+    const sf=s/tailSegs;
+    const tx=cX+bodyW*0.8+sf*tailLen;
+    const spread=bodyH*(0.5-sf*0.42)*(1+Math.sin(t*1.5+sf*8)*0.08);
+    const alpha=(1-sf)*0.18;
+
+    // Ion wake — blue outer
+    ctx.beginPath();
+    ctx.ellipse(tx,cY,4,spread*1.15,0,0,Math.PI*2);
+    ctx.fillStyle=BLUE;ctx.globalAlpha=alpha*0.6;ctx.fill();
+
+    // Thermal exhaust — coral inner
+    ctx.beginPath();
+    ctx.ellipse(tx,cY,3,spread*0.55,0,0,Math.PI*2);
+    ctx.fillStyle=CORAL;ctx.globalAlpha=alpha*1.2;ctx.fill();
+
+    // Energy buildup — amber core spine
+    if(sf<0.4){
+      ctx.beginPath();ctx.arc(tx,cY,3*(1-sf*2),0,Math.PI*2);
+      ctx.fillStyle=AMBER;ctx.globalAlpha=(1-sf*2.5)*0.6;ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Particle wake
+  for(let p=0;p<20;p++){
+    const sf=((t*0.3+p*0.05)%1);
+    const px=cX+bodyW+sf*tailLen;
+    const py=cY+(Math.sin(p*2.3)*bodyH*0.35*(1-sf));
+    ctx.beginPath();ctx.arc(px,py,1.5*(1-sf),0,Math.PI*2);
+    ctx.fillStyle=p%3===0?BLUE:p%3===1?CORAL:AMBER;
+    ctx.globalAlpha=(1-sf)*0.7;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Body — frolicker shape
+  // Calcium shell layers
+  for(let l=3;l>=0;l--){
+    const lf=l/3;
+    ctx.beginPath();ctx.ellipse(cX,cY,bodyW*(1+lf*0.1),bodyH*(1+lf*0.06),0,0,Math.PI*2);
+    ctx.fillStyle=TEAL;ctx.globalAlpha=0.05+lf*0.04;ctx.fill();
+    ctx.strokeStyle=TEAL;ctx.lineWidth=0.6;ctx.globalAlpha=0.12+lf*0.06;ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // Body fill
+  ctx.beginPath();ctx.ellipse(cX,cY,bodyW,bodyH,0,0,Math.PI*2);
+  ctx.fillStyle=PURPLE2;ctx.globalAlpha=0.35;ctx.fill();
+  ctx.strokeStyle=PURPLE;ctx.lineWidth=1.5;ctx.globalAlpha=0.7;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // Nanotube spine
+  ctx.beginPath();ctx.moveTo(cX,cY-bodyH*0.8);ctx.lineTo(cX,cY+bodyH*0.8);
+  ctx.strokeStyle=GOLD;ctx.lineWidth=3.5;ctx.globalAlpha=0.9;ctx.stroke();
+  for(let e=0;e<3;e++){
+    const ef=((t*0.6+e*0.33)%1);
+    const ey=cY-bodyH*0.8+ef*bodyH*1.6;
+    ctx.beginPath();ctx.arc(cX,ey,3,0,Math.PI*2);
+    ctx.fillStyle=AMBER;ctx.globalAlpha=0.9;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Gradient fins
+  [-1,1].forEach(side=>{
+    ctx.beginPath();
+    ctx.moveTo(cX+side*bodyW*0.85,cY-bodyH*0.3);
+    ctx.bezierCurveTo(
+      cX+side*(bodyW*1.5+Math.sin(t)*6),cY-bodyH*0.55,
+      cX+side*(bodyW*1.5+Math.sin(t)*6),cY+bodyH*0.25,
+      cX+side*bodyW*0.85,cY+bodyH*0.38
+    );
+    ctx.strokeStyle=BLUE;ctx.lineWidth=1.2;ctx.globalAlpha=0.55;ctx.stroke();
+    ctx.fillStyle=BLUE2;ctx.globalAlpha=0.1;ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Propulsion venting — rear expulsion ports
+  const portY=[-0.4,-0.1,0.2,0.5];
+  portY.forEach((yf,i)=>{
+    const py=cY+yf*bodyH*1.4-bodyH*0.4;
+    const ep=pulse(2,i*0.8);
+    ctx.beginPath();ctx.arc(cX+bodyW*0.95,py,3+ep*4,0,Math.PI*2);
+    ctx.fillStyle=CORAL;ctx.globalAlpha=0.5+ep*0.3;ctx.fill();
+    if(ep>0.5){
+      ctx.beginPath();
+      ctx.moveTo(cX+bodyW,py);ctx.lineTo(cX+bodyW+ep*25,py);
+      ctx.strokeStyle=AMBER;ctx.lineWidth=1.5;ctx.globalAlpha=ep*0.6;ctx.stroke();
+    }
+  });
+  ctx.globalAlpha=1;
+
+  // Direction arrow
+  ctx.beginPath();
+  ctx.moveTo(cX-bodyW*1.8,cY);ctx.lineTo(cX-bodyW*1.05,cY);
+  ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.globalAlpha=0.7;ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cX-bodyW*1.05,cY);ctx.lineTo(cX-bodyW*1.35,cY-8);
+  ctx.moveTo(cX-bodyW*1.05,cY);ctx.lineTo(cX-bodyW*1.35,cY+8);
+  ctx.strokeStyle=GREEN;ctx.lineWidth=2;ctx.globalAlpha=0.7;ctx.stroke();
+
+  ctx.font='11px sans-serif';
+  ctx.fillStyle=GREEN;ctx.globalAlpha=0.8;
+  ctx.fillText('drift direction',cX-bodyW*1.8-5,cY-12);
+  ctx.fillStyle=AMBER;
+  ctx.fillText('thermal exhaust',cX+bodyW*2,cY+bodyH*0.1);
+  ctx.fillStyle=BLUE;
+  ctx.fillText('ion wake',cX+bodyW*3,cY-bodyH*0.3);
+  ctx.globalAlpha=1;
+}
+
+// ── VIEW 4: EXPULSION CLOUD ──
+function drawExpulsion(){
+  ctx.clearRect(0,0,W(),H());
+  const cX=W()*0.35,cY=cy();
+  const bodyW=W()*0.095,bodyH=H()*0.3;
+
+  // Starfield
+  for(let i=0;i<50;i++){
+    ctx.beginPath();ctx.arc((i*179)%W(),(i*103)%H(),0.8,0,Math.PI*2);
+    ctx.fillStyle=LGRAY;ctx.globalAlpha=0.12;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Cloud phase — expelled packet orbiting and rejoining
+  const cloudPhase=(t*0.2)%(Math.PI*2);
+  const cloudDist=W()*0.22+Math.sin(t*0.15)*W()*0.06;
+  const cloudX=cX+Math.cos(cloudPhase)*cloudDist;
+  const cloudY=cY+Math.sin(cloudPhase)*cloudDist*0.5;
+  const cloudR=Math.min(W(),H())*0.12+Math.sin(t*0.5)*8;
+
+  // Cloud orbit trail
+  for(let tr=0;tr<24;tr++){
+    const tra=cloudPhase-tr*0.12;
+    const trX=cX+Math.cos(tra)*cloudDist;
+    const trY=cY+Math.sin(tra)*cloudDist*0.5;
+    ctx.beginPath();ctx.arc(trX,trY,2*(1-tr/24),0,Math.PI*2);
+    ctx.fillStyle=BLUE2;ctx.globalAlpha=0.3*(1-tr/24);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Cloud body — expelled energy packet
+  for(let layer=4;layer>=0;layer--){
+    const lf=layer/4;
+    ctx.beginPath();ctx.arc(cloudX,cloudY,cloudR*(1+lf*0.25),0,Math.PI*2);
+    ctx.fillStyle=BLUE;ctx.globalAlpha=0.04+lf*0.03;ctx.fill();
+    ctx.strokeStyle=BLUE2;ctx.lineWidth=0.7;ctx.globalAlpha=0.1+lf*0.06;ctx.stroke();
+  }
+
+  // Cloud internal activity — mini frolicker seeds inside
+  for(let s=0;s<6;s++){
+    const sa=(s/6)*Math.PI*2+t*0.3;
+    const sr=cloudR*0.55;
+    const sx=cloudX+Math.cos(sa)*sr,sy=cloudY+Math.sin(sa)*sr*0.7;
+    const p=pulse(1.5,s*0.6);
+    ctx.beginPath();ctx.arc(sx,sy,3+p*2,0,Math.PI*2);
+    ctx.fillStyle=TEAL2;ctx.globalAlpha=0.7;ctx.fill();
+  }
+
+  // Cloud membrane dots
+  for(let m=0;m<20;m++){
+    const ma=(m/20)*Math.PI*2+t*0.08;
+    const mr=cloudR*(0.9+Math.sin(t*2+m)*0.1);
+    ctx.beginPath();ctx.arc(cloudX+Math.cos(ma)*mr,cloudY+Math.sin(ma)*mr*0.75,1.8,0,Math.PI*2);
+    ctx.fillStyle=TEAL;ctx.globalAlpha=0.5;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Heat trace from body to cloud
+  ctx.beginPath();
+  ctx.moveTo(cX+bodyW,cY);
+  ctx.quadraticCurveTo((cX+bodyW+cloudX)/2,(cY+cloudY)/2-40,cloudX-cloudR*0.5,cloudY);
+  ctx.strokeStyle=CORAL;ctx.lineWidth=1;ctx.setLineDash([4,6]);
+  ctx.globalAlpha=0.35;ctx.stroke();
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+
+  // Reabsorption arc — arcing back toward body
+  if(cloudPhase>Math.PI*0.8){
+    const rFrac=(cloudPhase-Math.PI*0.8)/(Math.PI*1.2);
+    ctx.beginPath();
+    ctx.moveTo(cloudX,cloudY);
+    const rx=lerp(cloudX,cX,rFrac*0.6),ry=lerp(cloudY,cY,rFrac*0.6);
+    ctx.lineTo(rx,ry);
+    ctx.strokeStyle=AMBER;ctx.lineWidth=2;ctx.globalAlpha=rFrac*0.6;ctx.stroke();
+    ctx.beginPath();ctx.arc(rx,ry,4,0,Math.PI*2);
+    ctx.fillStyle=AMBER;ctx.globalAlpha=rFrac*0.8;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Body — frolicker, slightly depleted
+  for(let l=3;l>=0;l--){
+    ctx.beginPath();ctx.ellipse(cX,cY,bodyW*(1+l*0.09),bodyH*(1+l*0.05),0,0,Math.PI*2);
+    ctx.fillStyle=TEAL;ctx.globalAlpha=0.04+(l/3)*0.03;ctx.fill();
+    ctx.strokeStyle=TEAL;ctx.lineWidth=0.5;ctx.globalAlpha=0.1+(l/3)*0.06;ctx.stroke();
+  }
+  ctx.beginPath();ctx.ellipse(cX,cY,bodyW,bodyH,0,0,Math.PI*2);
+  ctx.fillStyle=PURPLE2;ctx.globalAlpha=0.28;ctx.fill();
+  ctx.strokeStyle=PURPLE;ctx.lineWidth=1.5;ctx.globalAlpha=0.65;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // Nanotube spine
+  ctx.beginPath();ctx.moveTo(cX,cY-bodyH*0.8);ctx.lineTo(cX,cY+bodyH*0.8);
+  ctx.strokeStyle=GOLD;ctx.lineWidth=3;ctx.globalAlpha=0.8;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // Fins
+  [-1,1].forEach(side=>{
+    ctx.beginPath();
+    ctx.moveTo(cX+side*bodyW*0.85,cY-bodyH*0.28);
+    ctx.bezierCurveTo(
+      cX+side*bodyW*1.45,cY-bodyH*0.5,
+      cX+side*bodyW*1.45,cY+bodyH*0.2,
+      cX+side*bodyW*0.85,cY+bodyH*0.35
+    );
+    ctx.strokeStyle=BLUE;ctx.lineWidth=1.1;ctx.globalAlpha=0.5;ctx.stroke();
+    ctx.fillStyle=BLUE2;ctx.globalAlpha=0.09;ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Labels
+  ctx.font='11px sans-serif';
+  ctx.fillStyle=BLUE;ctx.globalAlpha=0.8;
+  ctx.fillText('expelled energy packet',cloudX-40,cloudY-cloudR-8);
+  ctx.fillStyle=TEAL2;
+  ctx.fillText('seed units inside cloud',cloudX-38,cloudY+cloudR+16);
+  ctx.fillStyle=AMBER;ctx.globalAlpha=0.7;
+  ctx.fillText('reabsorption arc',cX+bodyW*1.2,cY-bodyH*0.7);
+  ctx.fillStyle=CORAL;ctx.globalAlpha=0.6;
+  ctx.fillText('heat trace',cX+bodyW*0.5,cY+bodyH*0.65);
+  ctx.globalAlpha=1;
+}
+
+const drawFns=[drawSpore,drawMature,drawColony,drawPropulsion,drawExpulsion];
+
+function loop(){
+  t+=0.013;
+  drawFns[view]();
+  raf=requestAnimationFrame(loop);
+}
+
+resize();
+window.addEventListener('resize',resize);
+desc.textContent=VIEWS[0].label;
+buildLegend();
+loop();
+</script>

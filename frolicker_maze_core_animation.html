@@ -1,0 +1,378 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  canvas { display: block; }
+  #wrap { position: relative; width: 100%; }
+  #ui { display: flex; flex-wrap: wrap; gap: 10px; padding: 1rem 0 0.5rem; align-items: center; }
+  label { font-size: 13px; color: var(--color-text-secondary); }
+  #legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 0.5rem 0 0.75rem; }
+  .leg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  #stats { display: flex; gap: 16px; padding: 0.5rem 0 0; }
+  .stat { font-size: 12px; color: var(--color-text-secondary); }
+  .stat span { font-weight: 500; color: var(--color-text-primary); }
+  #phaseLabel { font-size: 13px; font-weight: 500; color: var(--color-text-primary); padding: 0.25rem 0; min-height: 1.6em; }
+</style>
+
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <label>Speed</label>
+    <input type="range" min="0.2" max="3" step="0.1" value="1" id="spd" style="width:100px">
+    <label id="spdVal">1×</label>
+    <input type="range" min="0" max="1" step="0.01" value="0" id="phase" style="width:140px" title="Drag to scrub">
+    <label style="font-size:12px;color:var(--color-text-secondary)">scrub</label>
+    <button id="pauseBtn" style="font-size:12px;padding:4px 10px">Pause</button>
+  </div>
+  <div id="legend">
+    <div class="leg"><div class="dot" style="background:#5DCAA5"></div>iron–sulfur node</div>
+    <div class="leg"><div class="dot" style="background:#7F77DD"></div>lipid chain segment</div>
+    <div class="leg"><div class="dot" style="background:#EF9F27"></div>electron pulse</div>
+    <div class="leg"><div class="dot" style="background:#D85A30"></div>heat bloom</div>
+    <div class="leg"><div class="dot" style="background:#378ADD"></div>hydrogen bond site</div>
+  </div>
+  <div id="phaseLabel">Listening — absorbing 21 cm hydrogen spin-flip field</div>
+  <div id="stats">
+    <div class="stat">Helix rotation <span id="sRot">0°</span></div>
+    <div class="stat">Interior temp <span id="sTemp">2.7 K</span></div>
+    <div class="stat">Electron transfers <span id="sEl">0</span></div>
+    <div class="stat">H bonds captured <span id="sH">0</span></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('wrap');
+
+function resize() {
+  const w = wrap.clientWidth || 600;
+  canvas.width = w;
+  canvas.height = Math.round(w * 0.62);
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+const W = () => canvas.width;
+const H = () => canvas.height;
+const cx = () => W() / 2;
+const cy = () => H() / 2;
+
+let t = 0, paused = false, speed = 1;
+let elCount = 0, hCount = 0;
+
+const phaseDescs = [
+  "Listening — absorbing 21 cm hydrogen spin-flip field",
+  "Rotation initiates — helix ratchet converts EM to torque",
+  "Electron cascade — iron–sulfur nodes fire in sequence",
+  "Lipid maze friction — polar molecule heat generation begins",
+  "Heat bloom — interior warms above cosmic background",
+  "Hydrogen bond capture — ambient H atoms drawn inward",
+  "Peak coherence — self-sustaining thermal loop active"
+];
+
+document.getElementById('spd').addEventListener('input', e => {
+  speed = parseFloat(e.target.value);
+  document.getElementById('spdVal').textContent = speed.toFixed(1) + '×';
+});
+document.getElementById('pauseBtn').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('phase').addEventListener('input', e => {
+  t = parseFloat(e.target.value) * Math.PI * 2 * 4;
+});
+
+function lerp(a, b, f) { return a + (b - a) * f; }
+function easeIn(x) { return x * x; }
+
+const TEAL = '#5DCAA5';
+const PURPLE = '#7F77DD';
+const AMBER = '#EF9F27';
+const CORAL = '#D85A30';
+const BLUE = '#378ADD';
+const GRAY = '#888780';
+const LGRAY = '#D3D1C7';
+
+function drawHelixSpiral(rotAngle, energy) {
+  const cx_ = cx(), cy_ = cy();
+  const R = Math.min(W(), H()) * 0.28;
+  const turns = 5;
+  const pts = 300;
+  const phase2 = Math.sin(t * 0.3) * 0.15;
+
+  ctx.save();
+  ctx.translate(cx_, cy_);
+
+  for (let pass = 0; pass < 2; pass++) {
+    ctx.beginPath();
+    for (let i = 0; i <= pts; i++) {
+      const frac = i / pts;
+      const angle = frac * turns * Math.PI * 2 + rotAngle + (pass === 1 ? Math.PI : 0);
+      const r = frac * R;
+      const wobble = Math.sin(frac * 20 + t * 1.5) * 2;
+      const x = Math.cos(angle) * (r + wobble);
+      const y = Math.sin(angle) * (r + wobble) * 0.55;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    const alpha = pass === 0 ? 0.85 : 0.5;
+    ctx.strokeStyle = pass === 0 ? PURPLE : TEAL;
+    ctx.lineWidth = pass === 0 ? 1.8 : 1.2;
+    ctx.globalAlpha = alpha;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Iron-sulfur nodes along helix
+  const nodeCount = 12;
+  for (let n = 0; n < nodeCount; n++) {
+    const frac = (n + 0.5) / nodeCount;
+    const angle = frac * turns * Math.PI * 2 + rotAngle;
+    const r = frac * R;
+    const wobble = Math.sin(frac * 20 + t * 1.5) * 2;
+    const x = Math.cos(angle) * (r + wobble);
+    const y = Math.sin(angle) * (r + wobble) * 0.55;
+    const nodePulse = Math.abs(Math.sin(t * 2 + n * 0.8));
+    const nodeR = 4 + nodePulse * 3 * energy;
+    ctx.beginPath();
+    ctx.arc(x, y, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = TEAL;
+    ctx.globalAlpha = 0.7 + nodePulse * 0.3;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Electron pulse arcs between adjacent nodes
+    if (n > 0 && energy > 0.3) {
+      const prevFrac = (n - 0.5) / nodeCount;
+      const prevAngle = prevFrac * turns * Math.PI * 2 + rotAngle;
+      const prevR = prevFrac * R;
+      const prevWobble = Math.sin(prevFrac * 20 + t * 1.5) * 2;
+      const px = Math.cos(prevAngle) * (prevR + prevWobble);
+      const py = Math.sin(prevAngle) * (prevR + prevWobble) * 0.55;
+      const ePulse = (Math.sin(t * 3 + n * 1.2) + 1) / 2;
+      if (ePulse > 0.6) {
+        const ex = lerp(px, x, (ePulse - 0.6) / 0.4);
+        const ey = lerp(py, y, (ePulse - 0.6) / 0.4);
+        ctx.beginPath();
+        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.fillStyle = AMBER;
+        ctx.globalAlpha = ePulse;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawLipidMaze(energy, heat) {
+  const cx_ = cx(), cy_ = cy();
+  const R = Math.min(W(), H()) * 0.28;
+
+  ctx.save();
+  ctx.translate(cx_, cy_);
+
+  const arms = 8;
+  for (let a = 0; a < arms; a++) {
+    const baseAngle = (a / arms) * Math.PI * 2 + t * 0.2;
+    const kinky = 6;
+    ctx.beginPath();
+    let px = 0, py = 0;
+    for (let k = 0; k < kinky; k++) {
+      const frac = (k + 1) / kinky;
+      const kinkAngle = baseAngle + (k % 2 === 0 ? 0.4 : -0.4) + Math.sin(t + a) * 0.2;
+      const kr = frac * R * 0.7;
+      const nx = Math.cos(kinkAngle) * kr;
+      const ny = Math.sin(kinkAngle) * kr * 0.55;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(nx, ny);
+      px = nx; py = ny;
+    }
+    ctx.strokeStyle = PURPLE;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.35 + energy * 0.3;
+    ctx.stroke();
+  }
+
+  // Heat blooms
+  if (heat > 0.15) {
+    const bloomCount = Math.floor(heat * 8);
+    for (let b = 0; b < bloomCount; b++) {
+      const bAngle = (b / bloomCount) * Math.PI * 2 + t * 0.4 + b * 1.3;
+      const br = (0.1 + Math.random() * 0.4) * R * 0.8;
+      const bx = Math.cos(bAngle) * br;
+      const by = Math.sin(bAngle) * br * 0.55;
+      const bSize = (3 + heat * 12) * (0.5 + Math.sin(t * 2 + b) * 0.5);
+      ctx.beginPath();
+      ctx.arc(bx, by, bSize, 0, Math.PI * 2);
+      ctx.fillStyle = CORAL;
+      ctx.globalAlpha = heat * 0.18;
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+function drawHBondSites(rotAngle, hCapture) {
+  const cx_ = cx(), cy_ = cy();
+  const R = Math.min(W(), H()) * 0.28;
+
+  ctx.save();
+  ctx.translate(cx_, cy_);
+
+  const sites = 8;
+  for (let s = 0; s < sites; s++) {
+    const frac = s / sites;
+    const angle = frac * Math.PI * 2 + rotAngle * 0.4 + t * 0.05;
+    const r = R * (0.85 + Math.sin(t * 0.5 + s) * 0.08);
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r * 0.55;
+    const captured = hCapture > (s / sites);
+    ctx.beginPath();
+    ctx.arc(x, y, captured ? 5 : 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = captured ? BLUE : LGRAY;
+    ctx.globalAlpha = captured ? 0.9 : 0.5;
+    ctx.fill();
+    if (captured) {
+      ctx.beginPath();
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.strokeStyle = BLUE;
+      ctx.lineWidth = 0.8;
+      ctx.globalAlpha = 0.3;
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawShield(energy) {
+  const cx_ = cx(), cy_ = cy();
+  const rx = Math.min(W(), H()) * 0.38;
+  const ry = rx * 0.58;
+  const segments = 48;
+
+  for (let i = 0; i < segments; i++) {
+    const a0 = (i / segments) * Math.PI * 2;
+    const a1 = ((i + 1) / segments) * Math.PI * 2;
+    const pulse = Math.sin(t * 1.5 + i * 0.4) * 0.5 + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx_, cy_);
+    ctx.ellipse(cx_, cy_, rx, ry, 0, a0, a1);
+    ctx.closePath();
+    ctx.fillStyle = i % 3 === 0 ? '#1D9E75' : (i % 3 === 1 ? '#534AB7' : '#0F6E56');
+    ctx.globalAlpha = 0.04 + pulse * 0.04 * energy;
+    ctx.fill();
+  }
+
+  ctx.beginPath();
+  ctx.ellipse(cx_, cy_, rx, ry, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = TEAL;
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.25 + energy * 0.2;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawIncomingH(energy) {
+  const cx_ = cx(), cy_ = cy();
+  const R = Math.min(W(), H()) * 0.42;
+  const count = 6;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + t * 0.12 + i * 0.5;
+    const dist = R * (0.9 - ((t * 0.3 + i * 1.1) % 1) * 0.5);
+    const x = cx_ + Math.cos(angle) * dist;
+    const y = cy_ + Math.sin(angle) * dist * 0.55;
+    const alpha = Math.min(1, (1 - dist / R) * 2) * energy;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = BLUE;
+    ctx.globalAlpha = alpha * 0.7;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLabels(heat, energy) {
+  const fw = W(), fh = H();
+  ctx.font = '11px var(--font-sans, sans-serif)';
+  ctx.fillStyle = TEAL;
+  ctx.globalAlpha = 0.85;
+  ctx.fillText('melanin–chitin shield', fw * 0.03, fh * 0.12);
+  ctx.fillStyle = PURPLE;
+  ctx.fillText('chiral lipid maze', fw * 0.03, fh * 0.22);
+  ctx.fillStyle = TEAL;
+  ctx.fillText('Fe–S junction ring', fw * 0.03, fh * 0.32);
+  ctx.fillStyle = BLUE;
+  ctx.fillText('H-bond capture sites', fw * 0.72, fh * 0.12);
+  if (heat > 0.2) {
+    ctx.fillStyle = CORAL;
+    ctx.fillText('heat bloom', fw * 0.72, fh * 0.22);
+  }
+  if (energy > 0.4) {
+    ctx.fillStyle = AMBER;
+    ctx.fillText('electron pulse', fw * 0.72, fh * 0.32);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function getPhaseIdx(t) {
+  const cycle = (t % (Math.PI * 2 * 4)) / (Math.PI * 2 * 4);
+  return Math.min(phaseDescs.length - 1, Math.floor(cycle * phaseDescs.length));
+}
+
+let lastPhase = -1;
+let frameEl = 0;
+
+function draw() {
+  const w = W(), h = H();
+  ctx.clearRect(0, 0, w, h);
+
+  const cycle = (t % (Math.PI * 2 * 8)) / (Math.PI * 2 * 8);
+  const energy = Math.min(1, cycle * 3);
+  const heat = Math.max(0, (cycle - 0.25) * 1.8);
+  const hCapture = Math.max(0, (cycle - 0.5) * 2.5);
+  const rotAngle = t * 0.6;
+
+  drawShield(energy);
+  drawIncomingH(energy);
+  drawLipidMaze(energy, heat);
+  drawHelixSpiral(rotAngle, energy);
+  drawHBondSites(rotAngle, hCapture);
+  drawLabels(heat, energy);
+
+  // Stats
+  const rotDeg = Math.round((rotAngle * 180 / Math.PI) % 360);
+  const tempK = (2.7 + heat * 3.3).toFixed(1);
+  elCount = Math.floor(energy * 340);
+  hCount = Math.floor(hCapture * 8);
+  document.getElementById('sRot').textContent = rotDeg + '°';
+  document.getElementById('sTemp').textContent = tempK + ' K';
+  document.getElementById('sEl').textContent = elCount;
+  document.getElementById('sH').textContent = hCount;
+
+  const pi = getPhaseIdx(t);
+  if (pi !== lastPhase) {
+    document.getElementById('phaseLabel').textContent = phaseDescs[pi];
+    lastPhase = pi;
+  }
+
+  // Scrub slider sync if not scrubbing
+  document.getElementById('phase').value = (cycle).toFixed(3);
+}
+
+function loop() {
+  if (!paused) {
+    t += 0.012 * speed;
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>

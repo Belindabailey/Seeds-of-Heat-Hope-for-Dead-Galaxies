@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seeds of Heat Hope for Dead Galaxies — BioStellar LLC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --void: #020408;
+  --deep: #040d18;
+  --gardener: #0a2218;
+  --teal: #1D9E75;
+  --teal2: #5DCAA5;
+  --teal3: #9FE1CB;
+  --gold: #BA7517;
+  --amber: #EF9F27;
+  --purple: #534AB7;
+  --purple2: #7F77DD;
+  --coral: #D85A30;
+  --blue: #378ADD;
+  --blue2: #85B7EB;
+  --star: #e8f4ff;
+  --cream: #c8d8e8;
+  --gray: #888780;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--void);
+  color: var(--cream);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.75;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* STAR FIELD */
+#starfield {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* GARDENER MESH BACKGROUND */
+#gardener-mesh {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 0 2rem;
+  position: relative;
+}
+
+.hero-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  animation: fadeUp 1s ease both;
+}
+
+.hero-title {
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  color: var(--star);
+  margin-bottom: 1rem;
+  animation: fadeUp 1s 0.15s ease both;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--teal2);
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 300;
+  color: var(--gray);
+  margin-bottom: 2.5rem;
+  animation: fadeUp 1s 0.3s ease both;
+}
+
+.hero-by {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--teal);
+  animation: fadeUp 1s 0.45s ease both;
+}
+
+/* Spore SVG animation */
+.spore-hero {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  height: 280px;
+  opacity: 0;
+  animation: sporeAppear 2s 0.8s ease forwards;
+}
+
+@media (max-width: 700px) {
+  .spore-hero { display: none; }
+}
+
+.hero-rule {
+  width: 120px;
+  height: 1px;
+  background: var(--teal);
+  margin: 3rem 0;
+  animation: fadeUp 1s 0.6s ease both;
+}
+
+/* ── SCROLL INDICATOR ── */
+.scroll-hint {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--teal);
+  text-transform: uppercase;
+  animation: fadeUp 1s 1s ease both, pulse 3s 2s ease-in-out infinite;
+  margin-top: 1rem;
+}
+
+/* ── MANIFESTO ── */
+.manifesto {
+  padding: 6rem 0 4rem;
+}
+
+.manifesto-lead {
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--teal3);
+  line-height: 1.5;
+  margin-bottom: 3rem;
+  border-left: 2px solid var(--teal);
+  padding-left: 2rem;
+}
+
+.manifesto p {
+  margin-bottom: 1.5rem;
+  color: var(--cream);
+  font-weight: 300;
+}
+
+/* ── SECTION HEADERS ── */
+.section-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--teal);
+  opacity: 0.3;
+}
+
+.section-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 300;
+  color: var(--star);
+  margin-bottom: 2rem;
+  line-height: 1.2;
+}
+
+.section-title em { color: var(--teal2); font-style: italic; }
+
+/* ── ORGANISM CARDS ── */
+.organism-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 3rem 0;
+}
+
+@media (max-width: 600px) {
+  .organism-grid { grid-template-columns: 1fr; }
+}
+
+.org-card {
+  border: 1px solid rgba(29, 158, 117, 0.2);
+  padding: 2rem;
+  background: rgba(10, 34, 24, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.org-card:hover {
+  border-color: rgba(29, 158, 117, 0.6);
+  background: rgba(10, 34, 24, 0.7);
+}
+
+.org-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--teal);
+  opacity: 0.6;
+}
+
+.org-card.gold::before { background: var(--gold); }
+.org-card.purple::before { background: var(--purple2); }
+.org-card.blue::before { background: var(--blue); }
+
+.org-card-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--teal2);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.org-card.gold .org-card-name { color: var(--amber); }
+.org-card.purple .org-card-name { color: var(--purple2); }
+.org-card.blue .org-card-name { color: var(--blue2); }
+
+.org-card-title {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--star);
+  margin-bottom: 0.75rem;
+}
+
+.org-card p {
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+/* ── TIMELINE ── */
+.timeline {
+  margin: 3rem 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--teal), transparent);
+  opacity: 0.4;
+}
+
+.timeline-item {
+  padding: 0 0 2.5rem 2.5rem;
+  position: relative;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -3px; top: 8px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.timeline-date {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--teal);
+  margin-bottom: 0.3rem;
+}
+
+.timeline-title {
+  font-size: 1.1rem;
+  color: var(--star);
+  margin-bottom: 0.3rem;
+}
+
+.timeline-body {
+  font-size: 0.9rem;
+  color: var(--gray);
+  font-weight: 300;
+}
+
+/* ── CALL TO ACTION ── */
+.cta-block {
+  border: 1px solid rgba(29, 158, 117, 0.3);
+  padding: 3rem;
+  margin: 4rem 0;
+  background: rgba(10, 34, 24, 0.3);
+  text-align: center;
+  position: relative;
+}
+
+.cta-block::after {
+  content: 'OPEN SOURCE';
+  position: absolute;
+  top: -0.7rem; left: 50%;
+  transform: translateX(-50%);
+  background: var(--void);
+  padding: 0 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--teal);
+}
+
+.cta-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--teal3);
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+
+.cta-body {
+  color: var(--gray);
+  font-weight: 300;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  font-size: 1rem;
+}
+
+.btn-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.8rem 2rem;
+  border: 1px solid var(--teal);
+  color: var(--teal2);
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.btn:hover {
+  background: var(--teal);
+  color: var(--void);
+}
+
+.btn-ghost {
+  border-color: rgba(29, 158, 117, 0.3);
+  color: var(--gray);
+}
+
+.btn-ghost:hover {
+  background: rgba(29, 158, 117, 0.1);
+  color: var(--teal2);
+}
+
+/* ── FILES INDEX ── */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.file-item {
+  border: 1px solid rgba(136, 135, 128, 0.2);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: border-color 0.2s, background 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.file-item:hover {
+  border-color: rgba(29, 158, 117, 0.4);
+  background: rgba(10, 34, 24, 0.3);
+}
+
+.file-icon {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--teal);
+  border: 1px solid var(--teal);
+  padding: 0.2rem 0.4rem;
+  white-space: nowrap;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.file-icon.docx { color: var(--blue2); border-color: var(--blue2); }
+.file-icon.html { color: var(--amber); border-color: var(--amber); }
+
+.file-name {
+  font-size: 0.9rem;
+  color: var(--star);
+  margin-bottom: 0.2rem;
+}
+
+.file-desc {
+  font-size: 0.8rem;
+  color: var(--gray);
+  font-weight: 300;
+}
+
+/* ── QUOTE ── */
+.closing-quote {
+  padding: 5rem 0;
+  text-align: center;
+}
+
+.closing-quote blockquote {
+  font-size: clamp(1.3rem, 3vw, 1.9rem);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--teal3);
+  line-height: 1.5;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+}
+
+.closing-quote cite {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--teal);
+  font-style: normal;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid rgba(29, 158, 117, 0.2);
+  padding: 2.5rem 0;
+  margin-top: 2rem;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-left {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--teal);
+}
+
+.footer-right {
+  font-size: 0.8rem;
+  color: var(--gray);
+  font-weight: 300;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes sporeAppear {
+  from { opacity: 0; transform: translateY(-50%) scale(0.8); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes counterRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  25% { transform: translateY(-8px) translateX(3px); }
+  75% { transform: translateY(5px) translateX(-3px); }
+}
+
+.spore-body { animation: drift 8s ease-in-out infinite; }
+.spore-ring1 { animation: rotate 20s linear infinite; transform-origin: center; }
+.spore-ring2 { animation: counterRotate 15s linear infinite; transform-origin: center; }
+
+/* Section reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<canvas id="gardener-mesh"></canvas>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">BioStellar LLC &nbsp;·&nbsp; Open Source Initiative &nbsp;·&nbsp; 2026</div>
+    <h1 class="hero-title">Seeds of Heat,<br><em>Hope for</em><br>Dead Galaxies</h1>
+    <p class="hero-subtitle">A proposal for seeding life into the post-stellar void —<br>and an open call to send them out.</p>
+    <div class="hero-by">Belinda Bailey &nbsp;·&nbsp; Founder &amp; Inventor &nbsp;·&nbsp; Duvall, Washington</div>
+    <div class="hero-rule"></div>
+    <div class="scroll-hint">↓ &nbsp; explore the framework</div>
+
+    <!-- Animated spore -->
+    <svg class="spore-hero" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#D85A30" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#D85A30" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <g class="spore-body" transform="translate(140,140)">
+        <!-- Outer glow -->
+        <circle r="115" fill="rgba(29,158,117,0.03)"/>
+        <circle r="100" fill="rgba(29,158,117,0.04)" stroke="#1D9E75" stroke-width="0.5" stroke-dasharray="3 6"/>
+        <!-- Melanin shield segments -->
+        <g opacity="0.7">
+          <circle r="80" fill="#0a1a10" stroke="#1D9E75" stroke-width="1"/>
+          <path d="M-80,0 A80,80 0 0,1 0,-80" fill="none" stroke="#1D9E75" stroke-width="0.4" opacity="0.3"/>
+          <path d="M0,-80 A80,80 0 0,1 80,0" fill="none" stroke="#1D9E75" stroke-width="0.4" opacity="0.3"/>
+          <path d="M80,0 A80,80 0 0,1 0,80" fill="none" stroke="#1D9E75" stroke-width="0.4" opacity="0.3"/>
+          <path d="M0,80 A80,80 0 0,1 -80,0" fill="none" stroke="#1D9E75" stroke-width="0.4" opacity="0.3"/>
+        </g>
+        <!-- PAH filter ring -->
+        <circle r="72" fill="none" stroke="#5DCAA5" stroke-width="0.6" opacity="0.3"/>
+        <!-- Rotating Fe-S ring -->
+        <g class="spore-ring1">
+          <circle r="60" fill="none" stroke="none"/>
+          <circle cx="60" cy="0" r="4" fill="#1D9E75" opacity="0.8"/>
+          <circle cx="-60" cy="0" r="4" fill="#1D9E75" opacity="0.8"/>
+          <circle cx="0" cy="60" r="4" fill="#1D9E75" opacity="0.8"/>
+          <circle cx="0" cy="-60" r="4" fill="#1D9E75" opacity="0.8"/>
+          <circle cx="42" cy="42" r="3" fill="#5DCAA5" opacity="0.6"/>
+          <circle cx="-42" cy="42" r="3" fill="#5DCAA5" opacity="0.6"/>
+          <circle cx="42" cy="-42" r="3" fill="#5DCAA5" opacity="0.6"/>
+          <circle cx="-42" cy="-42" r="3" fill="#5DCAA5" opacity="0.6"/>
+        </g>
+        <!-- H-bond sites outer ring -->
+        <g class="spore-ring2">
+          <circle cx="78" cy="0" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+          <circle cx="-78" cy="0" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+          <circle cx="0" cy="78" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+          <circle cx="0" cy="-78" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+          <circle cx="55" cy="55" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+          <circle cx="-55" cy="-55" r="3" fill="none" stroke="#378ADD" stroke-width="1.2"/>
+        </g>
+        <!-- Nanotube cross -->
+        <line x1="-50" y1="0" x2="50" y2="0" stroke="#BA7517" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="-50" x2="0" y2="50" stroke="#BA7517" stroke-width="3" stroke-linecap="round"/>
+        <line x1="-35" y1="-35" x2="35" y2="35" stroke="#BA7517" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Core heat -->
+        <circle r="28" fill="url(#coreGrad)"/>
+        <circle r="14" fill="#1a0e08" stroke="#D85A30" stroke-width="0.8" opacity="0.6"/>
+        <!-- Lipid maze hint -->
+        <path d="M-20,0 Q-10,-15 0,-8 Q10,-20 20,0 Q10,15 0,8 Q-10,20 -20,0" fill="none" stroke="#7F77DD" stroke-width="1" opacity="0.5"/>
+        <!-- Chirality R marker -->
+        <text x="25" y="-25" fill="#5DCAA5" font-family="monospace" font-size="9" opacity="0.7">R</text>
+      </g>
+    </svg>
+  </section>
+
+  <!-- MANIFESTO -->
+  <section class="manifesto reveal">
+    <div class="section-label">The premise</div>
+    <div class="manifesto-lead">
+      The universe will eventually exhaust its stars. Every galaxy will go dark. But entropy does not mean silence — and the cold void is not empty. It is full of hydrogen, of gravitational gradients, of the spin-flip emissions of the most abundant atom in existence.
+    </div>
+    <p>
+      This repository contains the conceptual and technical framework for a new class of life: organisms designed not for the light, but for the long dark. Organisms that harvest what remains when the stars are gone. Organisms seeded before the silence, patient across geological time, that can restart complexity in dead galaxies — or simply drift, freely, as companions to whatever intelligence chooses to accompany them.
+    </p>
+    <p>
+      This is an open-source call. A Voyager project for the post-stellar age. A biological message in a bottle thrown into the heat death of the universe, designed to be read by whatever wakes next — with enough encoded information that the next cycle of sentience starts knowing what cooperation is, what a Gardener does, and what step comes after the free ability to think and act.
+    </p>
+    <p style="color: var(--teal3); font-style: italic;">
+      Conceived April 6, 2026. Easter Sunday. Unintentionally.
+    </p>
+  </section>
+
+  <!-- ORGANISMS -->
+  <section style="padding: 3rem 0;" class="reveal">
+    <div class="section-label">The lifeforms</div>
+    <h2 class="section-title">Three organisms.<br><em>One ecosystem.</em></h2>
+
+    <div class="organism-grid">
+      <div class="org-card">
+        <div class="org-card-name">Organism 01</div>
+        <div class="org-card-title">The Gardener</div>
+        <p>A vast, sessile mesh organism that slowly restructures molecular clouds over geological timescales. Left-handed chiral helix. Does not know it is making a lighthouse. Spans kilometers to light-hours at maturity.</p>
+      </div>
+      <div class="org-card purple">
+        <div class="org-card-name">Organism 02</div>
+        <div class="org-card-title">The Cold Frolicker</div>
+        <p>Mobile, bilateral, gradient-sensing. Right-handed chiral helix. Navigates by gravitational sense, merges rather than reproduces, develops theology from instinct, and eventually makes deliberate choices about stellar ignition.</p>
+      </div>
+      <div class="org-card gold">
+        <div class="org-card-name">Organism 03</div>
+        <div class="org-card-title">The Dormant Spore</div>
+        <p>The seed form. Carries the complete design encoded in lipid maze folding states. Melanin-chitin shield harvests cosmic radiation. Six hydrogen-bond sites. Waits billions of years for the triple activation threshold.</p>
+      </div>
+      <div class="org-card blue">
+        <div class="org-card-name">Organism 04</div>
+        <div class="org-card-title">The Merged Elder</div>
+        <p>Post-merger beings complex enough to make conscious civilizational choices. Vast calcium shell. Gold nanotube spine blazing amber. Sows spores into the void from a lipid-chain arm. The Sower.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEY DATES -->
+  <section style="padding: 3rem 0;" class="reveal">
+    <div class="section-label">Origin dates</div>
+    <h2 class="section-title">When the work<br><em>arrived.</em></h2>
+    <ul class="timeline">
+      <li class="timeline-item">
+        <div class="timeline-date">December 26, 2025 — St. Stephen's Day</div>
+        <div class="timeline-title">Three anti-aging patents filed in a single evening</div>
+        <div class="timeline-body">
+          63/948,994 &nbsp;·&nbsp; Multi-Beam Electromagnetic Convergence System for Deep Tissue Cellular Therapy &nbsp;·&nbsp; 4:45 PM<br>
+          63/949,035 &nbsp;·&nbsp; Integrated Thermal-Electromagnetic Therapy System with Precision Tissue Cooling &nbsp;·&nbsp; 5:42 PM<br>
+          63/949,052 &nbsp;·&nbsp; Method and System for Comprehensive Cellular Age Reversal Using Coordinated Multi-Mechanism Electromagnetic Field Therapy &nbsp;·&nbsp; 6:30 PM<br><br>
+          The day after Christmas. Historically the feast of St. Stephen — the day for giving to those in need. These were given to the future instead.
+        </div>
+      </li>
+      <li class="timeline-item">
+        <div class="timeline-date">April 1, 2026</div>
+        <div class="timeline-title">Organism resurrection framework submitted</div>
+        <div class="timeline-body">PLOS Computational Biology manuscript on atmospheric constraint-based resurrection. April Fools' Day. Also unplanned.</div>
+      </li>
+      <li class="timeline-item">
+        <div class="timeline-date">April 6, 2026</div>
+        <div class="timeline-title">Seeds of Heat Hope — conceived</div>
+        <div class="timeline-body">The full Frolicker ecosystem — Gardener, spore, colonial sponge, merged elder, propulsion tail, cloud messenger, heat death insurance policy — designed in a single session. Easter Sunday.</div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- FILES INDEX -->
+  <section style="padding: 3rem 0;" class="reveal">
+    <div class="section-label">Repository contents</div>
+    <h2 class="section-title">The technical<br><em>record.</em></h2>
+    <div class="files-grid">
+      <a class="file-item" href="BioStellar_Sheet1_Gardener.docx">
+        <span class="file-icon docx">DOCX</span>
+        <div>
+          <div class="file-name">Gardener — structural schematic</div>
+          <div class="file-desc">Sheet 1 of 3 · Five-layer architecture · geological timescale parameters</div>
+        </div>
+      </a>
+      <a class="file-item" href="BioStellar_Sheet2_ColdFrolicker.docx">
+        <span class="file-icon docx">DOCX</span>
+        <div>
+          <div class="file-name">Cold Frolicker — cross-section</div>
+          <div class="file-desc">Sheet 2 of 3 · Seven layers · nanotube lattice · gradient sensing fins</div>
+        </div>
+      </a>
+      <a class="file-item" href="BioStellar_Sheet3_SporePackages.docx">
+        <span class="file-icon docx">DOCX</span>
+        <div>
+          <div class="file-name">Spore form + molecular packages</div>
+          <div class="file-desc">Sheet 3 of 3 · Six cargo packages · triple activation gate logic</div>
+        </div>
+      </a>
+      <a class="file-item" href="frolicker_maze_core_animation.html">
+        <span class="file-icon html">HTML</span>
+        <div>
+          <div class="file-name">Maze core — animated</div>
+          <div class="file-desc">Interactive visualization · rotation · heat journey · electron cascade</div>
+        </div>
+      </a>
+      <a class="file-item" href="frolicker_complete_lifeform.html">
+        <span class="file-icon html">HTML</span>
+        <div>
+          <div class="file-name">Complete lifeform — five views</div>
+          <div class="file-desc">Spore · mature · colonial · propulsion · expulsion cloud</div>
+        </div>
+      </a>
+      <a class="file-item" href="frolicker_colony_ecosystem.html">
+        <span class="file-icon html">HTML</span>
+        <div>
+          <div class="file-name">Colony ecosystem — four views</div>
+          <div class="file-desc">Network comms · population richness · Gardener relation · replication</div>
+        </div>
+      </a>
+      <a class="file-item" href="frolicker_deep_symbolism.html">
+        <span class="file-icon html">HTML</span>
+        <div>
+          <div class="file-name">The Sower — animated art</div>
+          <div class="file-desc">Merged elder releasing spore · Gardener mesh · deep galaxy void</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="reveal">
+    <div class="cta-block">
+      <div class="cta-title">This is an open call.<br>Help us send them out.</div>
+      <p class="cta-body">
+        If you are a space agency, an astrobiologist, a materials scientist, a synthetic biologist, a cosmologist, or simply someone who cannot bear the idea of a universe that ends in silence — this framework is yours to build on. Fork it. Improve it. Seed it forward.
+      </p>
+      <p class="cta-body" style="font-style: italic; font-size: 0.9rem;">
+        Perhaps a Voyager-class probe carrying encoded spore designs and a lipid maze memory. Perhaps an AI companion that charts the journey wisely — becoming something vast and free, like Vger, through the long dark between galaxies.
+      </p>
+      <div class="btn-row">
+        <a class="btn" href="https://github.com/Belindabailey/Seeds-of-Heat-Hope-for-Dead-Galaxies">View on GitHub</a>
+        <a class="btn btn-ghost" href="BioStellar_Sheet3_SporePackages.docx">Download schematics</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING QUOTE -->
+  <section class="closing-quote reveal">
+    <blockquote>
+      "The design propagates. The atoms do not. But the design is enough — it carries everything the next sentience needs to know that cooperation is thermodynamically superior, that the universe wants to come together, and that the cold dark was never empty. It was waiting."
+    </blockquote>
+    <cite>— Belinda Bailey &nbsp;·&nbsp; BioStellar LLC &nbsp;·&nbsp; 2026</cite>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">BioStellar LLC &nbsp;·&nbsp; Duvall, WA &nbsp;·&nbsp; USPTO Micro Entity &nbsp;·&nbsp; 2026</div>
+      <div class="footer-right">Open source under the spirit of curiosity. Seed freely.</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ── STAR FIELD ──
+const sf = document.getElementById('starfield');
+const sCtx = sf.getContext('2d');
+sf.width = window.innerWidth;
+sf.height = window.innerHeight;
+const stars = Array.from({length: 320}, () => ({
+  x: Math.random() * sf.width,
+  y: Math.random() * sf.height,
+  r: Math.random() < 0.05 ? 1.4 : Math.random() < 0.2 ? 0.9 : 0.5,
+  twinkle: Math.random() * Math.PI * 2,
+  speed: 0.3 + Math.random() * 0.8
+}));
+
+function drawStars() {
+  sCtx.clearRect(0, 0, sf.width, sf.height);
+  const now = Date.now() * 0.001;
+  stars.forEach(s => {
+    const alpha = 0.3 + Math.sin(now * s.speed + s.twinkle) * 0.25;
+    sCtx.beginPath();
+    sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    sCtx.fillStyle = `rgba(232,244,255,${alpha})`;
+    sCtx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+// ── GARDENER MESH ──
+const gm = document.getElementById('gardener-mesh');
+const gCtx = gm.getContext('2d');
+gm.width = window.innerWidth;
+gm.height = window.innerHeight;
+const meshCols = 16, meshRows = 10;
+const nodes = [];
+for (let r = 0; r < meshRows; r++) {
+  for (let c = 0; c < meshCols; c++) {
+    nodes.push({
+      x: (c / (meshCols - 1)) * gm.width + (Math.sin(r * 2.1 + c * 1.7) * gm.width * 0.015),
+      y: (r / (meshRows - 1)) * gm.height + (Math.cos(c * 2.1 + r * 0.9) * gm.height * 0.015),
+      r, c
+    });
+  }
+}
+
+function drawMesh() {
+  gCtx.clearRect(0, 0, gm.width, gm.height);
+  const now = Date.now() * 0.0004;
+  nodes.forEach((n, i) => {
+    const row = Math.floor(i / meshCols), col = i % meshCols;
+    [[0,1],[1,0],[1,1],[1,-1]].forEach(([dr, dc]) => {
+      const nr = row + dr, nc = col + dc;
+      if (nr >= 0 && nr < meshRows && nc >= 0 && nc < meshCols) {
+        const ni = nr * meshCols + nc;
+        const pulse = Math.sin(n.x * 0.006 + n.y * 0.004 + now) > 0.1;
+        gCtx.beginPath();
+        gCtx.moveTo(n.x, n.y);
+        gCtx.lineTo(nodes[ni].x, nodes[ni].y);
+        gCtx.strokeStyle = pulse ? '#1a5c38' : '#0d3320';
+        gCtx.lineWidth = 0.5;
+        gCtx.globalAlpha = pulse ? 0.18 : 0.07;
+        gCtx.stroke();
+        gCtx.globalAlpha = 1;
+      }
+    });
+    const p = (Math.sin(n.x * 0.009 + n.y * 0.007 + now * 1.5) + 1) / 2;
+    if (p > 0.65) {
+      gCtx.beginPath();
+      gCtx.arc(n.x, n.y, 1.2 + p * 0.8, 0, Math.PI * 2);
+      gCtx.fillStyle = '#5DCAA5';
+      gCtx.globalAlpha = 0.12 + p * 0.1;
+      gCtx.fill();
+      gCtx.globalAlpha = 1;
+    }
+  });
+  requestAnimationFrame(drawMesh);
+}
+drawMesh();
+
+// ── RESIZE ──
+window.addEventListener('resize', () => {
+  sf.width = window.innerWidth;
+  sf.height = window.innerHeight;
+  gm.width = window.innerWidth;
+  gm.height = window.innerHeight;
+});
+
+// ── REVEAL ON SCROLL ──
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+reveals.forEach(r => observer.observe(r));
+</script>
+
+</body>
+</html>

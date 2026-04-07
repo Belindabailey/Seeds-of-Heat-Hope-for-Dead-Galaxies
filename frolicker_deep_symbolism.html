@@ -1,0 +1,521 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+canvas{display:block;width:100%;border-radius:4px}
+</style>
+<canvas id="c"></canvas>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let t=0;
+
+function resize(){
+  const w=cv.parentElement.clientWidth||680;
+  cv.width=w; cv.height=Math.round(w*1.18);
+}
+resize();
+window.addEventListener('resize',resize);
+
+function W(){return cv.width}
+function H(){return cv.height}
+function lerp(a,b,f){return a+(b-a)*f}
+function pulse(fr,ph){return(Math.sin(t*fr+ph)+1)/2}
+
+// Hardcoded palette — physical scene, no theme classes
+const BG0='#020408';
+const BG1='#040d18';
+const STAR='#e8f4ff';
+const STARDIM='#a0b8d0';
+const GARDENER='#0d3320';
+const GARDENER2='#1a5c38';
+const TEAL='#1D9E75';
+const TEAL2='#5DCAA5';
+const PURPLE='#534AB7';
+const PURPLE2='#7F77DD';
+const PURPLE3='#AFA9EC';
+const AMBER='#EF9F27';
+const GOLD='#BA7517';
+const CORAL='#D85A30';
+const CORAL2='#F0997B';
+const BLUE='#185FA5';
+const BLUE2='#378ADD';
+const BLUE3='#85B7EB';
+const GRAY='#444441';
+const LGRAY='#888780';
+const WHITE='#e8f0f8';
+const CREAM='#c8d8e8';
+
+function fillCirc(x,y,r,col,alpha){
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=col;ctx.globalAlpha=alpha;ctx.fill();ctx.globalAlpha=1;
+}
+function strokeCirc(x,y,r,col,lw,alpha){
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.globalAlpha=alpha;ctx.stroke();ctx.globalAlpha=1;
+}
+function line(x1,y1,x2,y2,col,lw,alpha,dash=[]){
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.globalAlpha=alpha;
+  ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+}
+
+function drawBackground(){
+  // Deep void fill
+  ctx.fillStyle=BG0;ctx.fillRect(0,0,W(),H());
+
+  // Subtle nebula warmth in upper region — Gardener's influence
+  const nc=W()*0.5,ny=H()*0.28;
+  for(let r=5;r>=0;r--){
+    ctx.beginPath();ctx.ellipse(nc,ny,W()*0.6*(1-r*0.08),H()*0.35*(1-r*0.08),0,0,Math.PI*2);
+    ctx.fillStyle=r<2?'#0a2218':'#061510';
+    ctx.globalAlpha=0.18-r*0.02;ctx.fill();ctx.globalAlpha=1;
+  }
+
+  // Lower region — cold blue void
+  ctx.beginPath();ctx.ellipse(W()*0.5,H()*0.85,W()*0.7,H()*0.25,0,0,Math.PI*2);
+  ctx.fillStyle='#04080f';ctx.globalAlpha=0.4;ctx.fill();ctx.globalAlpha=1;
+}
+
+function drawStars(){
+  const seed=137;
+  for(let i=0;i<340;i++){
+    const sx=((i*179.3+seed)%W());
+    const sy=((i*113.7+seed*0.7)%H());
+    const sr=i%23===0?1.4:i%7===0?0.9:0.5;
+    const twinkle=0.4+Math.sin(t*0.3+i*0.8)*0.2+(i%5===0?Math.sin(t*1.2+i)*0.15:0);
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);
+    ctx.fillStyle=i%11===0?BLUE3:STAR;
+    ctx.globalAlpha=twinkle*0.7;ctx.fill();ctx.globalAlpha=1;
+  }
+}
+
+function drawGardenerMesh(){
+  // Vast mesh spanning upper 60% — the unseen architect
+  const cols=18,rows=11;
+  const nodes=[];
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const jx=Math.sin(r*2.3+c*1.7)*W()*0.018;
+      const jy=Math.cos(c*2.1+r*1.1)*H()*0.012;
+      nodes.push({
+        x:W()*0.01+c*(W()*0.98/(cols-1))+jx,
+        y:H()*0.02+r*(H()*0.58/(rows-1))+jy,
+        r,c
+      });
+    }
+  }
+
+  // edges — faint organic lattice
+  nodes.forEach((n,i)=>{
+    const row=Math.floor(i/cols),col=i%cols;
+    [[0,1],[1,0],[1,1],[1,-1]].forEach(([dr,dc])=>{
+      const nr2=row+dr,nc2=col+dc;
+      if(nr2>=0&&nr2<rows&&nc2>=0&&nc2<cols){
+        const ni=nr2*cols+nc2;
+        const nd=nodes[ni];
+        const alive=Math.sin(n.x*0.008+n.y*0.006+t*0.08)>0.1;
+        ctx.beginPath();ctx.moveTo(n.x,n.y);ctx.lineTo(nd.x,nd.y);
+        ctx.strokeStyle=alive?GARDENER2:GARDENER;
+        ctx.lineWidth=0.5;ctx.globalAlpha=alive?0.22:0.08;ctx.stroke();
+        ctx.globalAlpha=1;
+      }
+    });
+  });
+
+  // node pulses
+  nodes.forEach(n=>{
+    const p=(Math.sin(n.x*0.009+n.y*0.007+t*0.15)+1)/2;
+    if(p>0.6){
+      fillCirc(n.x,n.y,1.2+p*0.8,TEAL2,0.15+p*0.12);
+    }else{
+      fillCirc(n.x,n.y,0.8,GARDENER2,0.2);
+    }
+  });
+
+  // Chemical gradient zones — three warm pockets
+  [[0.18,0.18,0.09],[0.58,0.12,0.11],[0.85,0.32,0.07]].forEach(([fx,fy,fr],zi)=>{
+    const zx=fx*W(),zy=fy*H(),zr=fr*Math.min(W(),H());
+    const zp=pulse(0.3,zi*1.2);
+    for(let ring=4;ring>=0;ring--){
+      ctx.beginPath();ctx.ellipse(zx,zy,zr*(1-ring*0.15),zr*(1-ring*0.15)*0.7,0,0,Math.PI*2);
+      ctx.fillStyle=ring<2?TEAL:'#062e1a';
+      ctx.globalAlpha=0.03+ring*0.015+zp*0.02;ctx.fill();ctx.globalAlpha=1;
+    }
+    strokeCirc(zx,zy,zr,TEAL2,0.6,0.15+zp*0.08);
+  });
+}
+
+function drawDistantColony(){
+  // Small colonial sponge in upper right — distant kin
+  const dx=W()*0.88,dy=H()*0.14,dr=Math.min(W(),H())*0.042;
+  const units=7;
+  for(let u=0;u<units;u++){
+    const ua=(u/units)*Math.PI*2;
+    const ux=dx+Math.cos(ua)*dr*0.65,uy=dy+Math.sin(ua)*dr*0.5;
+    ctx.beginPath();ctx.ellipse(ux,uy,dr*0.22,dr*0.16,0,0,Math.PI*2);
+    ctx.fillStyle=PURPLE2;ctx.globalAlpha=0.25;ctx.fill();
+    ctx.strokeStyle=PURPLE;ctx.lineWidth=0.5;ctx.globalAlpha=0.4;ctx.stroke();
+  }
+  // links
+  for(let u=0;u<units;u++){
+    const ua=(u/units)*Math.PI*2,ub=((u+1)/units)*Math.PI*2;
+    const ux=dx+Math.cos(ua)*dr*0.65,uy=dy+Math.sin(ua)*dr*0.5;
+    const vx=dx+Math.cos(ub)*dr*0.65,vy=dy+Math.sin(ub)*dr*0.5;
+    line(ux,uy,vx,vy,GOLD,0.8,0.3);
+    const ef=(t*0.3+u*0.15)%1;
+    fillCirc(lerp(ux,vx,ef),lerp(uy,vy,ef),1.5,AMBER,0.6);
+  }
+  // shared heat
+  fillCirc(dx,dy,dr*0.4+pulse(0.5,0.3)*6,CORAL,0.07);
+  // grav pulse
+  const gp=((t*0.06+0.3)%1);
+  strokeCirc(dx,dy,gp*dr*3.5,TEAL,0.8,(1-gp)*0.2);
+  ctx.globalAlpha=1;
+
+  // label
+  ctx.font=`${Math.round(W()*0.014)}px sans-serif`;
+  ctx.fillStyle=PURPLE3;ctx.globalAlpha=0.5;
+  ctx.fillText('distant colony',dx-W()*0.052,dy+dr*1.5);
+  ctx.globalAlpha=1;
+}
+
+function drawCloudMessenger(){
+  // Amber messenger crossing from upper left toward elder
+  const cX=W()*0.5,cY=H()*0.5;
+  const cpAngle=Math.PI*1.15+t*0.025;
+  const cdist=W()*0.31;
+  const mx=cX+Math.cos(cpAngle)*cdist*1.1;
+  const my=cY+Math.sin(cpAngle)*cdist*0.55;
+  const cr=Math.min(W(),H())*0.028+Math.sin(t*0.6)*2;
+
+  // orbital trail
+  for(let tr=0;tr<30;tr++){
+    const tra=cpAngle-tr*0.06;
+    const trx=cX+Math.cos(tra)*cdist*1.1;
+    const try2=cY+Math.sin(tra)*cdist*0.55;
+    fillCirc(trx,try2,1.2*(1-tr/30),BLUE2,(1-tr/30)*0.2);
+  }
+
+  // cloud body layers
+  for(let cl=4;cl>=0;cl--){
+    ctx.beginPath();ctx.arc(mx,my,cr*(1+cl*0.22),0,Math.PI*2);
+    ctx.fillStyle=cl<2?BLUE:'#081828';
+    ctx.globalAlpha=0.04+(4-cl)*0.025;ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  strokeCirc(mx,my,cr,BLUE2,0.8,0.35);
+
+  // seed units inside
+  for(let s=0;s<5;s++){
+    const sa=(s/5)*Math.PI*2+t*0.35;
+    fillCirc(mx+Math.cos(sa)*cr*0.52,my+Math.sin(sa)*cr*0.48,2,TEAL2,0.7);
+  }
+  // memory core
+  fillCirc(mx,my,cr*0.28+pulse(1.5,0.5)*2,AMBER,0.55);
+
+  // label
+  const fs=Math.round(W()*0.013);
+  ctx.font=`${fs}px sans-serif`;
+  ctx.fillStyle=BLUE3;ctx.globalAlpha=0.6;
+  ctx.fillText('cloud messenger',mx-W()*0.055,my-cr-6);
+  ctx.fillStyle=AMBER;ctx.globalAlpha=0.45;
+  ctx.fillText('lipid memory cargo',mx-W()*0.06,my+cr+14);
+  ctx.globalAlpha=1;
+}
+
+function drawElder(){
+  // The merged elder — vast, bilateral, central, posed as sower/drifter
+  const ex=W()*0.5,ey=H()*0.62;
+  const bW=W()*0.095,bH=H()*0.24;
+
+  // Aura — ancient accumulated energy
+  for(let ring=8;ring>=0;ring--){
+    const rr=(8-ring)/8;
+    ctx.beginPath();ctx.ellipse(ex,ey,bW*(2.2+ring*0.5),bH*(1.8+ring*0.35),0,0,Math.PI*2);
+    ctx.fillStyle=ring<3?'#0a1f12':'#060e0a';
+    ctx.globalAlpha=0.06-ring*0.005;ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  // Calcium shell — many layered ellipses with mineral texture
+  for(let layer=6;layer>=0;layer--){
+    const lf=layer/6;
+    const lCol=layer<2?'#085041':layer<4?'#0F6E56':TEAL;
+    ctx.beginPath();ctx.ellipse(ex,ey,bW*(1+lf*0.15),bH*(1+lf*0.08),0,0,Math.PI*2);
+    ctx.fillStyle=lCol;ctx.globalAlpha=0.05+lf*0.04;ctx.fill();
+    ctx.strokeStyle=TEAL;ctx.lineWidth=0.5;ctx.globalAlpha=0.08+lf*0.05;ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
+  // Melanin shield segments — dark and ancient
+  const segs=48;
+  for(let s=0;s<segs;s++){
+    const a0=(s/segs)*Math.PI*2,a1=((s+1)/segs)*Math.PI*2;
+    const p=pulse(0.8,s*0.25);
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.ellipse(ex,ey,bW*(1.12+p*0.02),bH*(1.08+p*0.015),0,a0,a1);
+    ctx.closePath();
+    ctx.fillStyle=s%3===0?'#1a1a18':s%3===1?'#111110':'#0d0d0c';
+    ctx.globalAlpha=0.55;ctx.fill();ctx.globalAlpha=1;
+  }
+  strokeCirc(ex,ey,bW*1.12,GRAY,1,0.4);
+
+  // Calcium mineral ring — outer deposits
+  for(let d=0;d<32;d++){
+    const da=(d/32)*Math.PI*2;
+    const dr=bW*(1.08+Math.sin(da*4)*0.04);
+    const dh=bH*(1.05+Math.sin(da*3)*0.03);
+    const dx2=ex+Math.cos(da)*dr,dy2=ey+Math.sin(da)*dh;
+    fillCirc(dx2,dy2,2.2,TEAL2,0.5);
+  }
+
+  // Lipid maze arms — ancient, many
+  for(let a=0;a<16;a++){
+    const ba=(a/16)*Math.PI*2+t*0.06;
+    ctx.beginPath();
+    let px=ex,py=ey;
+    for(let k=0;k<6;k++){
+      const fr=(k+1)/6,kink=ba+(k%2?0.38:-0.38)+Math.sin(t*0.4+a+k)*0.1;
+      const kr=fr*bW*0.85;
+      const nx=ex+Math.cos(kink)*kr,ny=ey+Math.sin(kink)*kr*0.72;
+      k===0?ctx.moveTo(px,py):ctx.lineTo(nx,ny);
+      px=nx;py=ny;
+    }
+    ctx.strokeStyle=PURPLE2;ctx.lineWidth=1;ctx.globalAlpha=0.3;ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
+  // Body fill — deep purple elder
+  ctx.beginPath();ctx.ellipse(ex,ey,bW,bH,0,0,Math.PI*2);
+  ctx.fillStyle='#1a1530';ctx.globalAlpha=0.7;ctx.fill();
+  ctx.strokeStyle=PURPLE;ctx.lineWidth=1.5;ctx.globalAlpha=0.6;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // NANOTUBE SPINE — blazing gold vertical
+  const spineGlow=pulse(0.5,0);
+  // glow passes
+  [8,5,3].forEach((gw,gi)=>{
+    ctx.beginPath();ctx.moveTo(ex,ey-bH*0.92);ctx.lineTo(ex,ey+bH*0.92);
+    ctx.strokeStyle=gi===0?'#3a2200':gi===1?GOLD:AMBER;
+    ctx.lineWidth=gw;ctx.globalAlpha=0.08+gi*0.06+spineGlow*0.04;ctx.stroke();
+    ctx.globalAlpha=1;
+  });
+  line(ex,ey-bH*0.92,ex,ey+bH*0.92,GOLD,2.5,0.95);
+
+  // Cross nanotubes
+  const crossY=[-0.55,-0.25,0.1,0.45];
+  crossY.forEach((yf,ci)=>{
+    const cy2=ey+yf*bH*1.6;
+    const xspan=bW*(0.75-Math.abs(yf)*0.3);
+    line(ex-xspan,cy2,ex+xspan,cy2,GOLD,1.5,0.6);
+    // electron
+    const ef=(t*0.35+ci*0.28)%1;
+    fillCirc(lerp(ex-xspan,ex+xspan,ef),cy2,2.5,AMBER,0.85);
+  });
+
+  // Flowing spine electrons
+  for(let e=0;e<6;e++){
+    const ef=((t*0.45+e*0.18)%1);
+    const ey2=ey-bH*0.92+ef*bH*1.84;
+    fillCirc(ex,ey2,3+pulse(1.5,e)*1.5,AMBER,0.9);
+  }
+
+  // Gradient sensing fins — extended, majestic
+  [-1,1].forEach(side=>{
+    // fin shape
+    ctx.beginPath();
+    ctx.moveTo(ex+side*bW*0.9,ey-bH*0.45);
+    ctx.bezierCurveTo(
+      ex+side*(bW*1.9+Math.sin(t*0.4)*6),ey-bH*0.75,
+      ex+side*(bW*2.1+Math.sin(t*0.4)*6),ey+bH*0.2,
+      ex+side*bW*0.9,ey+bH*0.48
+    );
+    ctx.strokeStyle=BLUE2;ctx.lineWidth=1.5;ctx.globalAlpha=0.55;ctx.stroke();
+    ctx.fillStyle=BLUE;ctx.globalAlpha=0.07;ctx.fill();
+    ctx.globalAlpha=1;
+
+    // tungsten dipoles on fin
+    for(let d=0;d<7;d++){
+      const df=d/6;
+      const fx=ex+side*(bW*1.55+Math.sin(t*0.4+df)*4);
+      const fy=ey-bH*0.42+df*bH*0.88;
+      const dp=pulse(1.2,d*0.55+side);
+      fillCirc(fx,fy,2.5+dp*2,TEAL2,0.75);
+      if(dp>0.65){
+        strokeCirc(fx,fy,5+dp*3,BLUE2,0.6,0.2);
+      }
+    }
+  });
+
+  // Fe-S sensor ring — many nodes, slow rotation
+  for(let s=0;s<22;s++){
+    const sa=(s/22)*Math.PI*2+t*0.12;
+    const sr=bW*0.88;
+    const sx=ex+Math.cos(sa)*sr,sy=ey+Math.sin(sa)*sr*0.72;
+    const p=pulse(1.5,s*0.45);
+    fillCirc(sx,sy,2.5+p*2,TEAL,0.75+p*0.2);
+    if(p>0.7){
+      fillCirc(sx+Math.cos(sa)*p*6,sy+Math.sin(sa)*p*4,2,AMBER,p*0.7);
+    }
+  }
+
+  // Heat core — deep and ancient
+  const hp=pulse(0.4,0.3);
+  fillCirc(ex,ey,bW*0.42+hp*12,CORAL,0.12+hp*0.06);
+  fillCirc(ex,ey,bW*0.2+hp*6,CORAL2,0.08);
+
+  // Sowing gesture — extended arm reaching down-left, releasing a spore
+  // Arm as lipid chain extension
+  const armAngle=Math.PI*0.72;
+  const armLen=bH*0.7;
+  ctx.beginPath();
+  ctx.moveTo(ex+Math.cos(armAngle)*bW*0.85,ey+Math.sin(armAngle)*bH*0.6);
+  for(let k=0;k<8;k++){
+    const fr=(k+1)/8;
+    const kink=armAngle+(k%2?0.22:-0.22)+Math.sin(t*0.3+k)*0.06;
+    const kr=fr*armLen;
+    ctx.lineTo(ex+Math.cos(armAngle)*bW*0.85+Math.cos(kink)*kr,
+               ey+Math.sin(armAngle)*bH*0.6+Math.sin(kink)*kr*0.75);
+  }
+  ctx.strokeStyle=PURPLE3;ctx.lineWidth=2;ctx.globalAlpha=0.6;ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // Spore at arm tip — being released/sown
+  const armTipX=ex+Math.cos(armAngle)*bW*0.85+Math.cos(armAngle+0.15)*armLen;
+  const armTipY=ey+Math.sin(armAngle)*bH*0.6+Math.sin(armAngle+0.15)*armLen*0.75;
+  const sp=pulse(0.9,0.7);
+
+  // spore shield
+  for(let sg=0;sg<18;sg++){
+    const sa0=(sg/18)*Math.PI*2,sa1=((sg+1)/18)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(armTipX,armTipY);
+    ctx.arc(armTipX,armTipY,W()*0.022*(1+sp*0.04),sa0,sa1);ctx.closePath();
+    ctx.fillStyle=sg%2===0?'#1a1a18':'#111110';ctx.globalAlpha=0.7;ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  strokeCirc(armTipX,armTipY,W()*0.022,TEAL2,0.8,0.4);
+  // spore H-bond sites
+  for(let hb=0;hb<5;hb++){
+    const hba=(hb/5)*Math.PI*2+t*0.08;
+    fillCirc(armTipX+Math.cos(hba)*W()*0.019,armTipY+Math.sin(hba)*W()*0.019*0.72,1.8,BLUE3,0.55);
+  }
+  // spore core glow
+  fillCirc(armTipX,armTipY,W()*0.007+sp*3,AMBER,0.5);
+
+  // drift line from spore — going down into the void
+  ctx.beginPath();ctx.moveTo(armTipX,armTipY+W()*0.025);
+  ctx.lineTo(armTipX+W()*0.04,armTipY+H()*0.18);
+  ctx.strokeStyle=TEAL2;ctx.lineWidth=0.8;ctx.globalAlpha=0.2;
+  ctx.setLineDash([3,9]);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+}
+
+function drawGravPulse(){
+  const ex=W()*0.5,ey=H()*0.62;
+  const gp=((t*0.05)%1);
+  const gR=gp*Math.min(W(),H())*0.55;
+  ctx.beginPath();ctx.ellipse(ex,ey,gR,gR*0.62,0,0,Math.PI*2);
+  ctx.strokeStyle=TEAL;ctx.lineWidth=1;ctx.globalAlpha=(1-gp)*0.15;ctx.stroke();
+  ctx.globalAlpha=1;
+}
+
+function drawVoidSpores(){
+  // Dormant basic spores drifting in lower void
+  const sporeData=[[0.12,0.82],[0.28,0.91],[0.42,0.86],[0.65,0.93],[0.78,0.8],[0.9,0.88]];
+  sporeData.forEach(([fx,fy],si)=>{
+    const sx=fx*W()+(Math.sin(t*0.07+si*1.3)*W()*0.015);
+    const sy=fy*H()+(Math.cos(t*0.05+si*0.9)*H()*0.01);
+    const sp=pulse(0.6,si*0.8);
+    const sr=Math.min(W(),H())*0.015;
+
+    // tiny shield
+    for(let sg=0;sg<12;sg++){
+      const sa0=(sg/12)*Math.PI*2,sa1=((sg+1)/12)*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(sx,sy);
+      ctx.arc(sx,sy,sr*(1+sp*0.03),sa0,sa1);ctx.closePath();
+      ctx.fillStyle=sg%2===0?'#141412':'#0d0d0c';ctx.globalAlpha=0.65;ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    strokeCirc(sx,sy,sr,GRAY,0.6,0.3);
+    // mini Fe-S ring
+    for(let s=0;s<5;s++){
+      const saa=(s/5)*Math.PI*2+t*0.2+si;
+      fillCirc(sx+Math.cos(saa)*sr*0.72,sy+Math.sin(saa)*sr*0.6,1.2,TEAL2,0.4);
+    }
+    // H-bond sites
+    for(let hb=0;hb<4;hb++){
+      const hba=(hb/4)*Math.PI*2;
+      fillCirc(sx+Math.cos(hba)*sr*0.88,sy+Math.sin(hba)*sr*0.7,1,BLUE3,0.35);
+    }
+    fillCirc(sx,sy,sr*0.22,AMBER,0.2+sp*0.1);
+  });
+}
+
+function drawText(){
+  const fs=Math.round(W()*0.016);
+  const fs2=Math.round(W()*0.012);
+  ctx.textBaseline='top';
+
+  // Main title
+  ctx.font=`500 ${fs}px sans-serif`;
+  ctx.fillStyle=TEAL2;ctx.globalAlpha=0.75;
+  ctx.fillText('the sower',W()*0.03,H()*0.03);
+  ctx.globalAlpha=1;
+
+  ctx.font=`400 ${fs2}px sans-serif`;
+  ctx.fillStyle=PURPLE3;ctx.globalAlpha=0.5;
+  ctx.fillText('merged elder — seeding a dead galaxy',W()*0.03,H()*0.03+fs+6);
+  ctx.globalAlpha=1;
+
+  // Annotations
+  ctx.font=`400 ${fs2}px sans-serif`;
+
+  ctx.fillStyle=GARDENER2;ctx.globalAlpha=0.55;
+  ctx.fillText('gardener mesh',W()*0.03,H()*0.12);
+  ctx.fillStyle=TEAL2;ctx.globalAlpha=0.4;
+  ctx.fillText('— the unseen architect',W()*0.03,H()*0.12+fs2+3);
+  ctx.globalAlpha=1;
+
+  ctx.fillStyle=GOLD;ctx.globalAlpha=0.65;
+  ctx.fillText('nanotube spine',W()*0.56,H()*0.42);
+  ctx.globalAlpha=1;
+
+  ctx.fillStyle=BLUE2;ctx.globalAlpha=0.55;
+  ctx.fillText('gradient fins',W()*0.03,H()*0.57);
+  ctx.fillStyle=BLUE3;ctx.globalAlpha=0.38;
+  ctx.fillText('— sensing the mass landscape',W()*0.03,H()*0.57+fs2+3);
+  ctx.globalAlpha=1;
+
+  ctx.fillStyle=TEAL2;ctx.globalAlpha=0.55;
+  ctx.fillText('spore released',W()*0.03,H()*0.78);
+  ctx.fillStyle=TEAL;ctx.globalAlpha=0.35;
+  ctx.fillText('— carrying design, not wealth',W()*0.03,H()*0.78+fs2+3);
+  ctx.globalAlpha=1;
+
+  ctx.fillStyle=LGRAY;ctx.globalAlpha=0.35;
+  ctx.fillText('dormant basic spirals — the common people',W()*0.3,H()*0.97);
+  ctx.globalAlpha=1;
+
+  // Bottom inscription
+  ctx.font=`400 ${Math.round(W()*0.011)}px sans-serif`;
+  ctx.fillStyle=CREAM;ctx.globalAlpha=0.18;
+  ctx.fillText('the design propagates — the atoms do not — BioStellar LLC  ·  conceived 2026',W()*0.03,H()*0.995-Math.round(W()*0.011));
+  ctx.globalAlpha=1;
+
+  ctx.textBaseline='alphabetic';
+}
+
+function draw(){
+  drawBackground();
+  drawStars();
+  drawGardenerMesh();
+  drawDistantColony();
+  drawCloudMessenger();
+  drawGravPulse();
+  drawElder();
+  drawVoidSpores();
+  drawText();
+}
+
+function loop(){t+=0.009;draw();requestAnimationFrame(loop);}
+resize();loop();
+</script>
