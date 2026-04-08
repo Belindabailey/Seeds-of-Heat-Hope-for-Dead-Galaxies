@@ -28,6 +28,15 @@ body { background: var(--void); color: var(--cream); font-family: 'Cormorant Gar
 @media (max-width: 700px) { .spore-hero { display: none; } }
 .hero-rule { width: 120px; height: 1px; background: var(--teal); margin: 3rem 0; animation: fadeUp 1s 0.6s ease both; }
 .scroll-hint { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--teal); text-transform: uppercase; animation: fadeUp 1s 1s ease both, pulse 3s 2s ease-in-out infinite; margin-top: 1rem; }
+/* MUSIC PLAYER */
+#music-bar { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 100; display: flex; align-items: center; gap: 0.75rem; background: rgba(2,4,8,0.88); border: 1px solid rgba(29,158,117,0.35); padding: 0.6rem 1rem; backdrop-filter: blur(8px); opacity: 0; transition: opacity 1s ease; }
+#music-bar.visible { opacity: 1; }
+#music-play-btn { font-family: 'Space Mono', monospace; font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal2); background: transparent; border: 1px solid rgba(29,158,117,0.4); padding: 0.4rem 0.85rem; cursor: pointer; transition: background 0.2s, color 0.2s; white-space: nowrap; }
+#music-play-btn:hover { background: var(--teal); color: var(--void); }
+#music-label { font-family: 'Space Mono', monospace; font-size: 0.5rem; letter-spacing: 0.08em; color: var(--gray); max-width: 160px; line-height: 1.5; }
+#music-disc { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(29,158,117,0.5); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#music-disc.spinning { animation: discSpin 3s linear infinite; }
+@keyframes discSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .manifesto { padding: 6rem 0 4rem; }
 .manifesto-lead { font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 300; font-style: italic; color: var(--teal3); line-height: 1.5; margin-bottom: 3rem; border-left: 2px solid var(--teal); padding-left: 2rem; }
 .manifesto p { margin-bottom: 1.5rem; color: var(--cream); font-weight: 300; }
@@ -277,6 +286,13 @@ footer { border-top: 1px solid rgba(29,158,117,0.2); padding: 2.5rem 0; margin-t
           <div class="file-desc">Merged elder releasing spore · Gardener mesh · deep galaxy void</div>
         </div>
       </a>
+      <a class="file-item" href="cold_body_parts.html">
+        <span class="file-icon html">HTML</span>
+        <div>
+          <div class="file-name">Cold Body Parts — anatomy reference</div>
+          <div class="file-desc">Illustrated guide · superfluid systems · energy storage · colony behavior · open design call</div>
+        </div>
+      </a>
     </div>
   </section>
 
@@ -306,6 +322,19 @@ footer { border-top: 1px solid rgba(29,158,117,0.2); padding: 2.5rem 0; margin-t
       <div class="footer-right">Open source under the spirit of curiosity. Seed freely.</div>
     </div>
   </footer>
+</div>
+
+<!-- MUSIC PLAYER -->
+<audio id="theme-audio" src="The_Seed_of_Heat_and_the_Frolickers_of_Night.mp3" preload="auto"></audio>
+<div id="music-bar">
+  <div id="music-disc">
+    <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="5" cy="5" r="4" stroke="#1D9E75" stroke-width="0.8"/>
+      <circle cx="5" cy="5" r="1.2" fill="#1D9E75" opacity="0.7"/>
+    </svg>
+  </div>
+  <div id="music-label">The Seed of Heat &amp;<br>the Frolickers of Night</div>
+  <button id="music-play-btn">▶ Play Again</button>
 </div>
 
 <script>
@@ -383,6 +412,51 @@ const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });
 reveals.forEach(r => observer.observe(r));
+
+// MUSIC — autoplay once, show bar after
+const audio = document.getElementById('theme-audio');
+const bar = document.getElementById('music-bar');
+const btn = document.getElementById('music-play-btn');
+const disc = document.getElementById('music-disc');
+
+// Only autoplay if not already played this session
+const alreadyPlayed = sessionStorage.getItem('themeHasPlayed');
+
+function startMusic() {
+  audio.currentTime = 0;
+  audio.play().catch(() => {}); // silently handle autoplay block
+  disc.classList.add('spinning');
+  btn.textContent = '■ Stop';
+}
+
+function stopMusic() {
+  audio.pause();
+  audio.currentTime = 0;
+  disc.classList.remove('spinning');
+  btn.textContent = '▶ Play Again';
+}
+
+audio.addEventListener('ended', () => {
+  disc.classList.remove('spinning');
+  btn.textContent = '▶ Play Again';
+});
+
+btn.addEventListener('click', () => {
+  if (audio.paused) {
+    startMusic();
+  } else {
+    stopMusic();
+  }
+});
+
+// Show bar after 2s regardless; attempt autoplay if first visit
+setTimeout(() => {
+  bar.classList.add('visible');
+  if (!alreadyPlayed) {
+    sessionStorage.setItem('themeHasPlayed', '1');
+    startMusic();
+  }
+}, 2000);
 </script>
 </body>
 </html>
